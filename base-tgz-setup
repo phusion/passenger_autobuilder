@@ -19,13 +19,16 @@ if [[ ${BASH_REMATCH[1]} > 0 ]] || [[ ${BASH_REMATCH[1]} == 0 && ${BASH_REMATCH[
 	echo force-unsafe-io > /etc/dpkg/dpkg.cfg.d/02apt-speedup
 fi
 
+addgroup --gid 2456 passenger_autobuilder
+adduser --uid 2456 --gid 2456 --disabled-password --gecos "Passenger Autobuilder" passenger_autobuilder
+
 apt-get update
 apt-get upgrade -y
 apt_get_install python-software-properties
 add-apt-repository ppa:phusion.nl/misc
 apt-get update
 
-apt_get_install build-essential ccache wget source-highlight lsb-release ssh
+apt_get_install build-essential ccache wget source-highlight lsb-release ssh sudo
 apt_get_install apache2-mpm-worker apache2-threaded-dev libssl-dev
 apt_get_install ruby ruby1.8 ruby1.8-dev rubygems ruby1.9 ruby1.9-dev rake mizuho
 

@@ -74,6 +74,7 @@ private
     STDOUT.sync = STDERR.sync = true
     set_env('USE_CCACHE', 1)
     set_env('GZIP', '--best')
+    set_env('VERBOSE', 1)
   end
 
   def set_env(key, value)

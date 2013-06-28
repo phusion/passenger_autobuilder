@@ -33,4 +33,4 @@ function perform()
 }
 
 perform lucid-i386.tgz i386 ubuntu-10.04-x86
-#perform lucid-amd64.tgz amd64 ubuntu-10.04-x86_64
+perform lucid-amd64.tgz amd64 ubuntu-10.04-x86_64
