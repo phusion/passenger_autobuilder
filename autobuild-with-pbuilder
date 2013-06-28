@@ -1,6 +1,32 @@
 #!/bin/bash
 set -e
 
+reset='\x1B[0m'
+bold='\x1B[1m'
+red='\x1B[31m'
+green='\x1B[32m'
+yellow='\x1B[33m'
+
+function status()
+{
+	echo -e "${yellow}# ${@}${reset}"
+}
+
+function success()
+{
+	echo -e "${green}${@}${reset}"
+}
+
+function warn()
+{
+	echo -e "${yellow}${@}${reset}"
+}
+
+function error()
+{
+	echo -e "${bold}${@}${reset}"
+}
+
 git_url="$1"
 name="$2"
 
@@ -25,6 +51,7 @@ function perform()
 		maybe_linux32=
 	fi
 
+	status "Performing build: $platform"
 	$maybe_linux32 pbuilder execute \
 		--basetgz "$base_tgz" \
 		--bindmounts "/srv/passenger_autobuilder" -- \
