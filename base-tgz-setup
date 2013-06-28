@@ -1,5 +1,6 @@
 #!/bin/bash
-set -e
+set -ev
+CURL_VERSION=7.31.0
 
 function apt_get_install()
 {
@@ -8,5 +9,24 @@ function apt_get_install()
 
 echo force-unsafe-io > /etc/dpkg/dpkg.cfg.d/02apt-speedup
 
-apt_get_install build-essential apache2-mpm-worker apache2-threaded-dev libcurl4-openssl-dev
+apt-get update
+apt-get upgrade -y
+
+apt_get_install build-essential ccache
+apt_get_install apache2-mpm-worker apache2-threaded-dev libopenssl-dev
 apt_get_install ruby1.8 ruby1.8-dev rubygems ruby1.9 ruby1.9-dev rake
+gem install mizuho bluecloth --no-rdoc --no-ri
+
+# Compile a minimalist libcurl with almost no dependencies.
+cd /tmp
+wget http://curl.haxx.se/download/curl-$CURL_VERSION.tar.bz2
+tar xjvf curl-$CURL_VERSION.tar.bz2
+rm curl-$CURL_VERSION.tar.bz2
+cd curl-$CURL_VERSION
+./configure --prefix=/usr/local/curl --disable-shared --disable-manual --disable-ldap --disable-ldaps \
+	--disable-rtsp --disable-dict --disable-ftp --disable-ftps --disable-gopher --disable-imap \
+	--disable-imaps --disable-pop3 --disable-pop3s --without-librtmp --disable-smtp --disable-smtps \
+	--disable-telnet --disable-tftp --without-libmetalink --without-libidn
+make install
+cd /
+rm -rf /tmp/curl-$CURL_VERSION

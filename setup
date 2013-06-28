@@ -36,11 +36,12 @@ function create_base_tgz()
 		success "$base_tgz already exists"
 	else
 		status "Creating $base_tgz..."
-		pbuilder create --basetgz "$base_tgz" --distribution $distro --architecture $arch --override-config
+		pbuilder create --basetgz "$base_tgz.1" --distribution $distro --architecture $arch --override-config
 		status "Installing necessary software in $base_tgz..."
-		pbuilder execute --basetgz "$base_tgz" --save-after-login base-tgz-setup
+		pbuilder execute --basetgz "$base_tgz.1" --save-after-login base-tgz-setup
+		mv "$base_tgz" "$base_tgz"
 	fi
 }
 
 create_base_tgz lucid-i386.tgz lucid i386
-create_base_tgz lucid-i386.tgz lucid amd64
+#create_base_tgz lucid-i386.tgz lucid amd64
