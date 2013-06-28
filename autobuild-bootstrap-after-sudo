@@ -11,4 +11,5 @@ mkdir -p "`dirname \"$repo_dir\"`"
 exec ruby1.9 /srv/passenger_autobuilder/autobuild-standalone \
 	--git-url "$git_url" \
 	--repo-dir "$repo_dir" \
-	--output-dir "/srv/passenger_autobuilder/output/$name/$platform"
+	--output-dir "/srv/passenger_autobuilder/output/$name" \
+	--work-tag "$platform"

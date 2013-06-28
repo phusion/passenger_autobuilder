@@ -30,7 +30,8 @@ private
   def parse_options
     @options = {
       :repo_dir => File.expand_path("repo"),
-      :output_dir => File.expand_path("output")
+      :output_dir => File.expand_path("output"),
+      :work_tag => "today"
     }
     parser = OptionParser.new do |opts|
       nl = "\n#{' ' * 37}"
@@ -46,6 +47,9 @@ private
       end
       opts.on("--output-dir DIR", String, "The directory in which to store binaries") do |val|
         @options[:output_dir] = File.expand_path(val)
+      end
+      opts.on("--work-tag NAME", String, "A tag to prevent duplicate builts") do |val|
+        @options[:work_tag] = val
       end
       opts.on("--help", "-h", "Show help message") do
         @options[:help] = true
@@ -119,7 +123,11 @@ private
   end
 
   def already_built?
-    File.exist?("#{@options[:output_dir]}/by_commit/#{@commit}")
+    File.exist?(work_tag_filename)
+  end
+
+  def work_tag_filename
+    "#{@options[:output_dir]}/by_commit/#{@commit}/built-#{@options[:work_tag]}.txt"
   end
 
   def recompile
@@ -153,6 +161,8 @@ private
     mkdir_p "#{@options[:output_dir]}/by_date", :verbose => true
     rm_f date_dir, :verbose => true
     ln_s commit_dir, date_dir, :verbose => true
+
+    sh "touch", work_tag_filename
   end
 
   def binary_compat_id
