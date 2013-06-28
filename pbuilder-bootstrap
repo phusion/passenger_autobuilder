@@ -1,0 +1,5 @@
+#!/bin/bash
+selfdir="$1"
+git_url="$2"
+workdir="$3"
+exec "$selfdir"/autobuild --git-url "$git_url" --repo-dir "$workdir/repo" --output-dir "$workdir/output"

@@ -1,0 +1,18 @@
+#!/bin/bash
+set -e
+
+selfdir=`dirname "$0"`
+selfdir=`cd "$selfdir"; pwd`
+
+git_url="$1"
+workdir="$2"
+
+if [[ "$git_url" = "" || "$workdir" = "" ]]; then
+	echo "Usage: ./autobuild-with-pbuilder GIT_URL WORK_DIR"
+	exit 1
+fi
+
+exec pbuilder execute \
+	--basetgz "/home/hongli/pbuilder/lucid-i386-base.tgz" \
+	--bindmounts "$selfdir $workdir" -- \
+	"$selfdir/pbuilder-bootstrap" "$selfdir" "$git_url" "$workdir"

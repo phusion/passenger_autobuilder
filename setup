@@ -1,0 +1,46 @@
+#!/bin/bash
+set -e
+
+reset='\x1B[0m'
+bold='\x1B[1m'
+red='\x1B[31m'
+green='\x1B[32m'
+yellow='\x1B[33m'
+
+function status()
+{
+	echo -e "${yellow}# ${@}${reset}"
+}
+
+function success()
+{
+	echo -e "${green}${@}${reset}"
+}
+
+function warn()
+{
+	echo -e "${yellow}${@}${reset}"
+}
+
+function error()
+{
+	echo -e "${bold}${@}${reset}"
+}
+
+function create_base_tgz()
+{
+	base_tgz="$1"
+	distro="$2"
+	arch="$3"
+	if [[ -f "$base_tgz" ]]; then
+		success "$base_tgz already exists"
+	else
+		status "Creating $base_tgz..."
+		pbuilder create --basetgz "$base_tgz" --distribution $distro --architecture $arch --override-config
+		status "Installing necessary software in $base_tgz..."
+		pbuilder execute --basetgz "$base_tgz" --save-after-login base-tgz-setup
+	fi
+}
+
+create_base_tgz lucid-i386.tgz lucid i386
+create_base_tgz lucid-i386.tgz lucid amd64
