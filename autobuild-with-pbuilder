@@ -1,18 +1,36 @@
 #!/bin/bash
 set -e
 
-selfdir=`dirname "$0"`
-selfdir=`cd "$selfdir"; pwd`
-
 git_url="$1"
-workdir="$2"
+name="$2"
 
-if [[ "$git_url" = "" || "$workdir" = "" ]]; then
-	echo "Usage: ./autobuild-with-pbuilder GIT_URL WORK_DIR"
+if [[ "$git_url" = "" || "$name" = "" ]]; then
+	echo "Usage: ./autobuild-with-pbuilder GIT_URL NAME"
 	exit 1
 fi
 
-exec pbuilder execute \
-	--basetgz "/home/hongli/pbuilder/lucid-i386-base.tgz" \
-	--bindmounts "$selfdir $workdir" -- \
-	"$selfdir/pbuilder-bootstrap" "$selfdir" "$git_url" "$workdir"
+function perform()
+{
+	local base_tgz
+	local arch
+	local platform
+	base_tgz="$1"
+	arch="$2"
+	platform="$3"
+
+	local maybe_linux32
+	if [[ $arch == i386 ]]; then
+		maybe_linux32=linux32
+	else
+		maybe_linux32=
+	fi
+
+	$maybe_linux32 pbuilder execute \
+		--basetgz "$base_tgz" \
+		--bindmounts "/srv/passenger_autobuilder" -- \
+		"/srv/passenger_autobuilder/autobuild-bootstrap-in-pbuilder" \
+		"$git_url" "$platform" "$name"
+}
+
+perform lucid-i386.tgz i386 ubuntu-10.04-x86
+#perform lucid-amd64.tgz amd64 ubuntu-10.04-x86_64

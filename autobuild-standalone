@@ -113,7 +113,16 @@ private
   end
 
   def recompile
-    sh("rake apache2 nginx")
+    sh "ruby1.8 -S rake apache2 nginx"
+    sh "ruby1.9 -S rake native_support"
+    # The .o files were only used for linking agent executables.
+    sh "rm -f buildout/agents/*.o"
+    # The .o and .a files were only used for linking the Apache module.
+    sh "rm -rf buildout/apache2/*.o buildout/apache2/*.a buildout/apache2/module*"
+    # The directory is no longer necessary, only libboost_oxt.a matters.
+    sh "rm -rf buildout/common/libboost_oxt"
+    # libeio and libev were only used for linking agent executables.
+    sh "rm -rf buildout/common/libeio buildout/common/libev"
   end
 
   def copy_over_binaries

@@ -27,21 +27,71 @@ function error()
 	echo -e "${bold}${@}${reset}"
 }
 
-function create_base_tgz()
+function init_base_tgz()
 {
+	local base_tgz
+	local distro
+	local arch
+	local maybe_linux32
 	base_tgz="$1"
 	distro="$2"
 	arch="$3"
+	maybe_linux32="$4"
+
+	status "Creating $base_tgz..."
+	$maybe_linux32 pbuilder create --basetgz "$base_tgz.initiating" \
+		--distribution $distro --architecture $arch \
+		--override-config --components "main universe"
+	mv "$base_tgz.initiating" "$base_tgz.initial"
+}
+
+function modify_base_tgz()
+{
+	local base_tgz
+	local platform
+	local maybe_linux32
+	base_tgz="$1"
+	platform="$2"
+	maybe_linux32="$3"
+
+	status "Installing necessary software in $base_tgz..."
+	$maybe_linux32 pbuilder execute \
+		--basetgz "$base_tgz.initial" \
+		--save-after-login \
+		--bindmounts /srv/passenger_autobuilder \
+		base-tgz-setup \
+		"`cat pbuilder-environment`" \
+		"$platform"
+	mv "$base_tgz.initial" "$base_tgz"
+}
+
+function create_base_tgz()
+{
+	local base_tgz
+	local distro
+	local arch
+	local platform
+	local maybe_linux32
+
+	base_tgz="$1"
+	distro="$2"
+	arch="$3"
+	platform="$4"
+	if [[ $arch == i386 ]]; then
+		maybe_linux32=linux32
+	else
+		maybe_linux32=
+	fi
+
 	if [[ -f "$base_tgz" ]]; then
 		success "$base_tgz already exists"
+	elif [[ -f "$base_tgz.initial" ]]; then
+		modify_base_tgz "$base_tgz" "$platform" "$maybe_linux32"
 	else
-		status "Creating $base_tgz..."
-		pbuilder create --basetgz "$base_tgz.1" --distribution $distro --architecture $arch --override-config
-		status "Installing necessary software in $base_tgz..."
-		pbuilder execute --basetgz "$base_tgz.1" --save-after-login base-tgz-setup
-		mv "$base_tgz" "$base_tgz"
+		init_base_tgz "$base_tgz" "$distro" "$arch" "$maybe_linux32"
+		modify_base_tgz "$base_tgz" "$platform" "$maybe_linux32"
 	fi
 }
 
-create_base_tgz lucid-i386.tgz lucid i386
-#create_base_tgz lucid-i386.tgz lucid amd64
+create_base_tgz lucid-i386.tgz lucid i386 ubuntu-10.04-x86
+#create_base_tgz lucid-amd64.tgz lucid amd64 ubuntu-10.04-x86_64
