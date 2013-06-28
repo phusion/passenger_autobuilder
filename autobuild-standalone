@@ -17,7 +17,7 @@ class Autobuild
     set_environment
     initialize_logger
     fetch_latest_code
-    infer_commit_info
+    inspect_codebase
     if already_built?
       log "Already built commit #{@commit}. Exiting."
     else
@@ -75,6 +75,7 @@ private
     set_env('USE_CCACHE', 1)
     set_env('GZIP', '--best')
     set_env('VERBOSE', 1)
+    set_env('APACHE2_OUTPUT_DIR', "buildout/apache-#{apache_version}")
   end
 
   def set_env(key, value)
@@ -111,7 +112,7 @@ private
     Dir.chdir(@options[:repo_dir])
   end
 
-  def infer_commit_info
+  def inspect_codebase
     lines = `git show --pretty='format:%h\n%H\n%s' -s`.split("\n")
     @commit, @sha, @subject = lines
     log "Commit #{@commit}: #{@subject}"
@@ -141,14 +142,30 @@ private
 
     log "Archiving binaries to #{commit_dir}"
     mkdir_p commit_dir, :verbose => true
-    sh "tar", "-czf", "#{commit_dir}/passenger-binaries.tar.gz", ".", :chdir => "buildout"
+    sh "tar", "-czf", "#{commit_dir}/support-#{binary_compat_id}.tar.gz", "agents", "common", :chdir => "buildout"
+    sh "tar", "-czf", "#{commit_dir}/apache-#{apache_version}-#{binary_compat_id}.tar.gz", "mod_passenger.so", :chdir => "buildout/apache-#{apache_version}"
+    Dir["buildout/ruby/*"].each do |subdir|
+      name = File.basename(subdir)
+      sh "tar", "-czf", "#{commit_dir}/rubyext-#{name}.tar.gz", ".", :chdir => "buildout/ruby/#{name}"
+    end
 
     log "Setting date symlink"
     mkdir_p "#{@options[:output_dir]}/by_date", :verbose => true
     rm_f date_dir, :verbose => true
     ln_s commit_dir, date_dir, :verbose => true
   end
-  
+
+  def binary_compat_id
+    `./bin/passenger-config --cxx-compat-id`.strip
+  end
+
+  def apache_version
+    result = `apache2 -V | grep 'Server version' | awk '{print $3}'`.strip
+    result.gsub!(/.*\//, '')
+    result =~ /^([0-9]+\.[0-9]+)/
+    $1
+  end
+
   def sh(command, *args)
     log "#{command} #{args.join(' ')}"
     if !system(command, *args)

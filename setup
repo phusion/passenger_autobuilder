@@ -93,5 +93,5 @@ function create_base_tgz()
 	fi
 }
 
-create_base_tgz lucid-i386.tgz lucid i386 ubuntu-10.04-x86
 create_base_tgz lucid-amd64.tgz lucid amd64 ubuntu-10.04-x86_64
+create_base_tgz lucid-i386.tgz lucid i386 ubuntu-10.04-x86

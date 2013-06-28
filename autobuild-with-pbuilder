@@ -29,9 +29,10 @@ function error()
 
 git_url="$1"
 name="$2"
+only_one="$3"
 
 if [[ "$git_url" = "" || "$name" = "" ]]; then
-	echo "Usage: ./autobuild-with-pbuilder GIT_URL NAME"
+	echo "Usage: ./autobuild-with-pbuilder GIT_URL NAME [--only-one]"
 	exit 1
 fi
 
@@ -59,5 +60,6 @@ function perform()
 		"$git_url" "$platform" "$name"
 }
 
-perform lucid-i386.tgz i386 ubuntu-10.04-x86
 perform lucid-amd64.tgz amd64 ubuntu-10.04-x86_64
+if [[ "$only_one" != "" ]]; then exit; fi
+perform lucid-i386.tgz i386 ubuntu-10.04-x86

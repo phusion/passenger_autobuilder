@@ -1,0 +1,13 @@
+#!/bin/bash
+base_tgz="$1"
+shift
+if [[ "$base_tgz" = "" ]]; then
+	echo "Usage: ./login-pbuilder <BASE_TGZ> [--save-after-login]"
+	exit 1
+fi
+if [[ "$base_tgz" =~ i386 ]]; then
+	maybe_linux32=linux32
+else
+	maybe_linux32=
+fi
+exec $maybe_linux32 pbuilder login "$@" --basetgz "$base_tgz"
