@@ -1,0 +1,3 @@
+git_url: https://github.com/FooBarWidget/passenger.git
+repo_dir: /srv/passenger_autobuilder/repo
+output_dir: /srv/passenger_autobuilder/output

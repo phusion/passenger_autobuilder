@@ -1,0 +1,154 @@
+#!/usr/bin/env ruby
+# encoding: utf-8
+abort "This tool requires Ruby 1.9" if RUBY_VERSION <= '1.9'
+
+require 'yaml'
+require 'optparse'
+require 'logger'
+require 'fileutils'
+
+ROOT = File.expand_path(File.dirname(__FILE__))
+
+class Autobuild
+  include FileUtils
+
+  def start
+    parse_options
+    set_environment
+    initialize_logger
+    load_config
+    cd_repo_dir
+    #fetch_latest_code
+    infer_commit_info
+    recompile
+    copy_over_binaries
+  end
+
+private
+  def parse_options
+    @options = { :repo_dir => "repo", :output_dir => "output" }
+    parser = OptionParser.new do |opts|
+      nl = "\n#{' ' * 37}"
+      opts.banner = "Usage: ./autobuild OPTIONS"
+      opts.separator ""
+      
+      opts.separator "Options:"
+      opts.on("--git-url URL", String, "The git URL") do |val|
+        @options[:git_url] = val
+      end
+      opts.on("--repo-dir URL", String, "The directory in which to store the repository") do |val|
+        @options[:repo_dir] = val
+      end
+      opts.on("--output-dir URL", String, "The directory in which to store binaries") do |val|
+        @options[:output_dir] = val
+      end
+      opts.on("--help", "-h", "Show help message") do
+        @options[:help] = true
+      end
+    end
+
+    begin
+      parser.parse!
+    rescue OptionParser::ParseError => e
+      STDERR.puts e
+      STDERR.puts
+      STDERR.puts "Please see './autobuild --help' for valid options."
+      exit 1
+    end
+
+    if @options[:help]
+      puts parser
+      exit 0
+    end
+    if !@options[:git_url]
+      abort "Please specify --git-url."
+    end
+  end
+
+  def set_environment
+    STDOUT.sync = STDERR.sync = true
+    set_env('USE_CCACHE', 1)
+    set_env('GZIP', '--best')
+  end
+
+  def set_env(key, value)
+    log "export #{key}=#{value}"
+    ENV[key] = value.to_s
+  end
+
+  def initialize_logger
+    @logger = Logger.new(STDOUT)
+  end
+
+  def load_config
+    @config = YAML.load_file("#{ROOT}/config.yml")
+    @repo_dir = File.expand_path(@config['repo_dir'])
+    @output_dir = File.expand_path(@config['output_dir'])
+  end
+
+  def fetch_latest_code
+    if File.exist?(@config['repo_dir'])
+      git_fetch_and_reset
+    else
+      git_clone
+    end
+  end
+
+  def git_fetch_and_reset
+    cd_repo_dir
+    sh "rm -rf *"
+    sh "git fetch"
+    sh "git reset --hard origin/master"
+  end
+
+  def git_clone
+    sh "git", "clone", @config['git_url'], @repo_dir
+    cd_repo_dir
+  end
+
+  def cd_repo_dir
+    log "cd #{@repo_dir}"
+    Dir.chdir(@repo_dir)
+  end
+
+  def infer_commit_info
+    lines = `git show --pretty='format:%h\n%H\n%s' -s`.split("\n")
+    @commit, @sha, @subject = lines
+    log "Commit #{@commit}: #{@subject}"
+  end
+
+  def recompile
+    sh("rake apache2 nginx")
+  end
+
+  def copy_over_binaries
+    commit_dir = "#{@output_dir}/by_commit/#{@commit}"
+    date_dir   = "#{@output_dir}/by_date/#{Date.today}"
+
+    log "Archiving binaries to #{commit_dir}"
+    mkdir_p commit_dir, :verbose => true
+    sh "tar", "-czf", "#{commit_dir}/passenger-binaries.tar.gz", ".", :chdir => "buildout"
+
+    log "Setting date symlink"
+    mkdir_p "#{@output_dir}/by_date", :verbose => true
+    rm_f date_dir, :verbose => true
+    ln_s commit_dir, date_dir, :verbose => true
+  end
+  
+  def sh(command, *args)
+    log "#{command} #{args.join(' ')}"
+    if !system(command, *args)
+      abort "*** Command failed with code #{$? ? $?.exitstatus : 'unknown'}"
+    end
+  end
+
+  def log(message)
+    if STDOUT.tty?
+      puts "\e[1m# #{message}\e[0m"
+    else
+      puts "# #{message}"
+    end
+  end
+end
+
+Autobuild.new.start
