@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ev
+set -ex
 
 environment="$1"
 platform="$2"
@@ -13,6 +13,20 @@ function apt_get_install()
 	apt-get install -y --no-install-recommends "$@"
 }
 
+function install_apache()
+{
+	local version="$1"
+	local compat_version="$2"
+	pushd /tmp
+	wget http://apache.mirrors.hoobly.com//httpd/httpd-$version.tar.bz2
+	tar xjvf httpd-$version.tar.bz2
+	rm httpd-$version.tar.bz2
+	cd httpd-$version
+	./configure --prefix=/usr/local/apache-$compat_version --with-included-apr
+	make install-strip
+	popd
+}
+
 apt_version=`apt-get --version | head -n 1 | awk '{print $2}'`
 [[ "$apt_version" =~ ^([0-9]+)\.([0-9]+) ]]
 if [[ ${BASH_REMATCH[1]} > 0 ]] || [[ ${BASH_REMATCH[1]} == 0 && ${BASH_REMATCH[2]} > 7 ]]; then
@@ -24,22 +38,32 @@ adduser --uid 2456 --gid 2456 --disabled-password --gecos "Passenger Autobuilder
 
 apt-get update
 apt-get upgrade -y
-apt_get_install python-software-properties
+apt_get_install python-software-properties lsb-release
 add-apt-repository ppa:phusion.nl/misc
 apt-get update
 
-apt_get_install build-essential ccache wget source-highlight lsb-release ssh sudo
-apt_get_install apache2-mpm-worker apache2-threaded-dev libssl-dev
-apt_get_install ruby ruby1.8 ruby1.8-dev rubygems ruby1.9 ruby1.9-dev rake mizuho
-
 distro_version=`lsb_release -r | awk '{print $2}'`
+
 if [[ $distro_version = 10.04 ]]; then
 	apt_get_install git-core
 else
 	apt_get_install git
 fi
+apt_get_install build-essential ccache wget curl source-highlight lsb-release ssh sudo mizuho
 
-gem install bluecloth --no-rdoc --no-ri
+# Install Ruby and Ruby tools
+sed -i -E 's/^%sudo\tALL=\(ALL:ALL\) ALL$/%sudo  ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
+curl -L https://get.rvm.io | sudo -u passenger_autobuilder sudo bash -s stable
+usermod -a -G rvm passenger_autobuilder
+sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.8.7'
+sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.9.0'
+sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.9.1'
+sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.9.2'
+sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.9.3'
+sudo -u passenger_autobuilder -H bash -lc 'rvm install 2.0.0'
+bash -lc 'rvm --default 1.9.3'
+sudo -u passenger_autobuilder -H bash -lc 'rvm --default 1.9.3'
+sudo -u passenger_autobuilder -H bash -lc 'gem install bluecloth --no-rdoc --no-ri'
 
 # Compile a static OpenSSL library.
 if [[ ! -e /usr/local/override/bin/openssl ]]; then
@@ -64,7 +88,12 @@ if [[ ! -e /usr/local/override/bin/curl ]]; then
 		--disable-rtsp --disable-dict --disable-ftp --disable-ftps --disable-gopher --disable-imap \
 		--disable-imaps --disable-pop3 --disable-pop3s --without-librtmp --disable-smtp --disable-smtps \
 		--disable-telnet --disable-tftp --without-libmetalink --without-libidn
-	make install
+	make install-strip
 	cd ..
 	rm -rf curl-$CURL_VERSION
 fi
+
+# Compile Apaches
+install_apache 2.0.64 2.0
+install_apache 2.2.24 2.2
+install_apache 2.4.4 2.4
