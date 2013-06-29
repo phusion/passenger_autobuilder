@@ -17,14 +17,36 @@ function install_apache()
 {
 	local version="$1"
 	local compat_version="$2"
-	pushd /tmp
-	wget http://apache.mirrors.hoobly.com//httpd/httpd-$version.tar.bz2
-	tar xjvf httpd-$version.tar.bz2
-	rm httpd-$version.tar.bz2
-	cd httpd-$version
-	./configure --prefix=/usr/local/apache-$compat_version --with-included-apr
-	make install-strip
-	popd
+	local with_included_apr="$3"
+	local download_apr="$4"
+	if [[ ! -e /usr/local/apache-$compat_version ]]; then
+		pushd /tmp
+		wget http://apache.mirrors.hoobly.com//httpd/httpd-$version.tar.bz2
+		tar xjvf httpd-$version.tar.bz2
+		rm httpd-$version.tar.bz2
+		cd httpd-$version
+		if [[ "$download_apr" = --download-apr ]]; then
+			pushd srclib
+
+			wget http://mirror.nl.webzilla.com/apache//apr/apr-1.4.8.tar.bz2
+			tar xjvf apr-1.4.8.tar.bz2
+			rm apr-1.4.8.tar.bz2
+			mv apr-1.4.8 apr
+			
+			wget http://mirror.nl.webzilla.com/apache//apr/apr-util-1.5.2.tar.bz2
+			tar xjvf apr-util-1.5.2.tar.bz2
+			rm apr-util-1.5.2.tar.bz2
+			mv apr-util-1.5.2 apr-util
+
+			popd
+		fi
+		./configure --prefix=/usr/local/apache-$compat_version $with_included_apr
+		make
+		make install
+		cd ..
+		rm -rf httpd-$version
+		popd
+	fi
 }
 
 apt_version=`apt-get --version | head -n 1 | awk '{print $2}'`
@@ -33,8 +55,12 @@ if [[ ${BASH_REMATCH[1]} > 0 ]] || [[ ${BASH_REMATCH[1]} == 0 && ${BASH_REMATCH[
 	echo force-unsafe-io > /etc/dpkg/dpkg.cfg.d/02apt-speedup
 fi
 
-addgroup --gid 2456 passenger_autobuilder
-adduser --uid 2456 --gid 2456 --disabled-password --gecos "Passenger Autobuilder" passenger_autobuilder
+if ! grep -q passenger_autobuilder /etc/group; then
+	addgroup --gid 2456 passenger_autobuilder
+fi
+if ! grep -q passenger_autobuilder /etc/passwd; then
+	adduser --uid 2456 --gid 2456 --disabled-password --gecos "Passenger Autobuilder" passenger_autobuilder
+fi
 
 apt-get update
 apt-get upgrade -y
@@ -49,20 +75,25 @@ if [[ $distro_version = 10.04 ]]; then
 else
 	apt_get_install git
 fi
-apt_get_install build-essential ccache wget curl source-highlight lsb-release ssh sudo mizuho
+apt_get_install build-essential ccache wget curl source-highlight lsb-release \
+	ssh sudo mizuho libpcre3-dev
 
 # Install Ruby and Ruby tools
+usermod -a -G sudo passenger_autobuilder
 sed -i -E 's/^%sudo\tALL=\(ALL:ALL\) ALL$/%sudo  ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
+sed -i -E 's/^%sudo ALL=\(ALL\) ALL$/%sudo ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
 curl -L https://get.rvm.io | sudo -u passenger_autobuilder sudo bash -s stable
 usermod -a -G rvm passenger_autobuilder
-sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.8.7'
-sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.9.0'
-sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.9.1'
-sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.9.2'
-sudo -u passenger_autobuilder -H bash -lc 'rvm install 1.9.3'
-sudo -u passenger_autobuilder -H bash -lc 'rvm install 2.0.0'
+
+sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.8.7'
+sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.1'
+sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.2'
+sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.3'
+sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 2.0.0'
 bash -lc 'rvm --default 1.9.3'
 sudo -u passenger_autobuilder -H bash -lc 'rvm --default 1.9.3'
+/usr/local/rvm/bin/rvm cleanup all
+
 sudo -u passenger_autobuilder -H bash -lc 'gem install bluecloth --no-rdoc --no-ri'
 
 # Compile a static OpenSSL library.
@@ -95,5 +126,5 @@ fi
 
 # Compile Apaches
 install_apache 2.0.64 2.0
-install_apache 2.2.24 2.2
-install_apache 2.4.4 2.4
+install_apache 2.2.24 2.2 --with-included-apr
+install_apache 2.4.4 2.4 --with-included-apr --download-apr
