@@ -1,5 +1,5 @@
 #!/bin/bash
-set -ev
+set -ex
 git_url="$1"
 platform="$2"
 name="$3"
@@ -7,7 +7,7 @@ source /srv/passenger_autobuilder/pbuilder-environment
 export CCACHE_DIR="/srv/passenger_autobuilder/ccache/$platform"
 repo_dir="/srv/passenger_autobuilder/repo/$name"
 mkdir -p "$CCACHE_DIR"
-mkdir -p "$repo_dir"
+mkdir -p "`dirname \"$repo_dir\"`"
 exec ruby1.9 /srv/passenger_autobuilder/autobuild-standalone \
 	--git-url "$git_url" \
 	--repo-dir "$repo_dir" \
