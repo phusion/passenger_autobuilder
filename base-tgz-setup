@@ -82,11 +82,10 @@ apt_get_install build-essential ccache wget curl source-highlight lsb-release \
 usermod -a -G sudo passenger_autobuilder
 sed -i -E 's/^%sudo\tALL=\(ALL:ALL\) ALL$/%sudo  ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
 sed -i -E 's/^%sudo ALL=\(ALL\) ALL$/%sudo ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
-curl -L https://get.rvm.io | sudo -u passenger_autobuilder sudo bash -s stable
+[[ -e /usr/local/rvm ]] || (curl -L https://get.rvm.io | sudo -u passenger_autobuilder sudo bash -s stable)
 usermod -a -G rvm passenger_autobuilder
 
 sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.8.7'
-sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.1'
 sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.2'
 sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.3'
 sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 2.0.0'

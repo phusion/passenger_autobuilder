@@ -10,4 +10,4 @@ if [[ "$base_tgz" =~ i386 ]]; then
 else
 	maybe_linux32=
 fi
-exec $maybe_linux32 pbuilder login "$@" --basetgz "$base_tgz"
+exec $maybe_linux32 pbuilder login "$@" --bindmounts /srv/passenger_autobuilder --basetgz "$base_tgz"

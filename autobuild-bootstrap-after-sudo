@@ -8,7 +8,7 @@ export CCACHE_DIR="/srv/passenger_autobuilder/ccache/$platform"
 repo_dir="/srv/passenger_autobuilder/repo/$name"
 mkdir -p "$CCACHE_DIR"
 mkdir -p "`dirname \"$repo_dir\"`"
-exec ruby1.9 /srv/passenger_autobuilder/autobuild-standalone \
+exec /usr/local/rvm/bin/rvm-exec ruby-2.0.0 ruby /srv/passenger_autobuilder/autobuild-standalone \
 	--git-url "$git_url" \
 	--repo-dir "$repo_dir" \
 	--output-dir "/srv/passenger_autobuilder/output/$name" \

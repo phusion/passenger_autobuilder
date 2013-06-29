@@ -10,6 +10,8 @@ require 'date'
 ROOT = File.expand_path(File.dirname(__FILE__))
 
 class Autobuild
+  APACHE_VERSIONS = ['2.0', '2.2', '2.4']
+
   include FileUtils
 
   def start
@@ -79,7 +81,6 @@ private
     set_env('USE_CCACHE', 1)
     set_env('GZIP', '--best')
     set_env('VERBOSE', 1)
-    set_env('APACHE2_OUTPUT_DIR', "buildout/apache-#{apache_version}")
   end
 
   def set_env(key, value)
@@ -131,12 +132,25 @@ private
   end
 
   def recompile
-    sh "ruby1.8 -S rake apache2 nginx"
-    sh "ruby1.9 -S rake native_support"
+    sh "/usr/local/rvm/bin/rvm-exec ruby-1.8.7 rake native_support"
+    sh "/usr/local/rvm/bin/rvm-exec ruby-1.9.2 rake native_support"
+    sh "/usr/local/rvm/bin/rvm-exec ruby-1.9.3 rake native_support"
+    sh "/usr/local/rvm/bin/rvm-exec ruby-2.0.0 rake native_support"
+
+    sh "/usr/local/rvm/bin/rvm-exec ruby-2.0.0 rake nginx"
+
+    APACHE_VERSIONS.each do |version|
+      sh "rm -rf build/cache"
+      sh "/usr/local/rvm/bin/rvm-exec ruby-2.0.0 rake apache2 " +
+        "APACHE2_OUTPUT_DIR=buildout/apache-#{version} " +
+        "APXS2=/usr/local/apache-#{version}/bin/apxs " +
+        "PATH=/usr/local/apache-#{version}/bin:#{ENV['PATH']}"
+    end
+
     # The .o files were only used for linking agent executables.
     sh "rm -f buildout/agents/*.o"
     # The .o and .a files were only used for linking the Apache module.
-    sh "rm -rf buildout/apache2/*.o buildout/apache2/*.a buildout/apache2/module*"
+    sh "rm -rf buildout/apache*/*.o buildout/apache*/*.a buildout/apache*/module*"
     # The directory is no longer necessary, only libboost_oxt.a matters.
     sh "rm -rf buildout/common/libboost_oxt"
     # libeio and libev were only used for linking agent executables.
@@ -150,11 +164,17 @@ private
 
     log "Archiving binaries to #{commit_dir}"
     mkdir_p commit_dir, :verbose => true
-    sh "tar", "-czf", "#{commit_dir}/support-#{binary_compat_id}.tar.gz", "agents", "common", :chdir => "buildout"
-    sh "tar", "-czf", "#{commit_dir}/apache-#{apache_version}-#{binary_compat_id}.tar.gz", "mod_passenger.so", :chdir => "buildout/apache-#{apache_version}"
+
     Dir["buildout/ruby/*"].each do |subdir|
       name = File.basename(subdir)
       sh "tar", "-czf", "#{commit_dir}/rubyext-#{name}.tar.gz", ".", :chdir => "buildout/ruby/#{name}"
+    end
+    sh "tar", "-czf", "#{commit_dir}/support-#{binary_compat_id}.tar.gz",
+      "agents", "common", :chdir => "buildout"
+
+    APACHE_VERSIONS.each do |version|
+      sh "tar", "-czf", "#{commit_dir}/apache-#{version}-#{binary_compat_id}.tar.gz",
+        "mod_passenger.so", :chdir => "buildout/apache-#{version}"
     end
 
     log "Setting date symlink"
@@ -166,14 +186,7 @@ private
   end
 
   def binary_compat_id
-    `./bin/passenger-config --cxx-compat-id`.strip
-  end
-
-  def apache_version
-    result = `apache2 -V | grep 'Server version' | awk '{print $3}'`.strip
-    result.gsub!(/.*\//, '')
-    result =~ /^([0-9]+\.[0-9]+)/
-    $1
+    @binary_compat_id ||= `./bin/passenger-config --cxx-compat-id`.strip
   end
 
   def sh(command, *args)
