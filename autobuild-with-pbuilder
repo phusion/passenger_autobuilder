@@ -31,14 +31,14 @@ function perform()
 	fi
 
 	status "Performing build: $platform"
-	$maybe_linux32 sudo pbuilder execute \
+	$maybe_linux32 sudo /usr/sbin/pbuilder execute \
 		--basetgz "$base_tgz" \
 		--bindmounts "$PASSENGER_AUTOBUILDER_ROOT" \
 		-- \
-		autobuild-bootstrap-in-pbuilder \
+		"$PASSENGER_AUTOBUILDER_APP/autobuild-bootstrap-in-pbuilder" \
 		"$git_url" "$platform" "$name"
 }
 
-perform lucid-amd64.tgz amd64 linux-x86_64
+perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-amd64.tgz" amd64 linux-x86_64
 if [[ "$only_one" != "" ]]; then exit; fi
-perform lucid-i386.tgz i386 linux-x86
+perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-i386.tgz" i386 linux-x86

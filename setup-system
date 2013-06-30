@@ -8,26 +8,33 @@ if "`pwd`" != /srv/passenger_autobuilder/app; then
 	exit 1
 fi
 
+function create_user()
+{
+	local name="$1"
+	local full_name="$2"
+	local id="$3"
+	if ! grep -q "^$name:" /etc/group >/dev/null; then
+		sudo addgroup --gid $id $name
+	fi
+	if ! grep -q "^$name:" /etc/passwd; then
+		sudo adduser --uid $id --gid $id --disabled-password --gecos "$full_name" $name
+	fi
+	sudo usermod -L $name
+}
+
 set -x
 cd /srv/passenger_autobuilder
-if ! grep -q psg_autobuilder /etc/group >/dev/null; then
-	sudo addgroup --gid 2456 psg_autobuilder
-fi
-if ! grep -q psg_autobuilder /etc/passwd; then
-	sudo adduser --uid 2456 --gid 2456 --disabled-password --gecos "Passenger Autobuilder" psg_autobuilder
-fi
-if ! grep -q psg_autobuilder_chroot /etc/group >/dev/null; then
-	sudo addgroup --gid 2457 psg_autobuilder_chroot
-fi
-if ! grep -q psg_autobuilder_chroot /etc/passwd; then
-	sudo adduser --uid 2457 --gid 2457 --disabled-password --gecos "Passenger Autobuilder Chroot" psg_autobuilder_chroot
-fi
+create_user psg_autobuilder "Passenger Autobuilder" 2456
+create_user psg_autobuilder_chroot "Passenger Autobuilder Chroot" 2457
+create_user psg_autobuilder_run "Passenger Autobuilder Run" 2458
 
 umask u=rwx,g=rwx,o=rx
-sudo mkdir -p output repos
+sudo mkdir -p output repos images
 sudo mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot
 sudo chown root: .
 sudo chmod g-w,o-w .
 sudo chown -R psg_autobuilder:psg_autobuilder app
 sudo chown -R psg_autobuilder_chroot:psg_autobuilder_chroot output repos ccache/psg_autobuilder_chroot
 sudo chmod o-rx ccache/pbuilder ccache/psg_autobuilder_chroot repos
+sudo cp app/sudoers.conf /etc/sudoers.d/passenger_autobuilder
+sudo chmod 440 /etc/sudoers.d/passenger_autobuilder

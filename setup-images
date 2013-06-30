@@ -116,6 +116,6 @@ for arg in "$@"; do
 	esac
 done
 
-create_base_tgz lucid-amd64.tgz lucid amd64 ubuntu-10.04-x86_64
+create_base_tgz ../images/lucid-amd64.tgz lucid amd64 ubuntu-10.04-x86_64
 if [[ $only_one = 1 ]]; then exit; fi
-create_base_tgz lucid-i386.tgz lucid i386 ubuntu-10.04-x86
+create_base_tgz ../images/lucid-i386.tgz lucid i386 ubuntu-10.04-x86

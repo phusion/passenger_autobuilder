@@ -8,6 +8,6 @@
 
 ## Build binaries
 
-Run as a normal user. It will call sudo automatically.
+Run as `psg_autobuilder_run`. It will call sudo automatically.
 
     ./autobuild-with-pbuilder https://github.com/FooBarWidget/passenger.git passenger
