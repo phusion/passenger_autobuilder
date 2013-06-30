@@ -1,0 +1,31 @@
+#!/bin/bash
+set -e
+
+dir=`dirname "$0"`
+cd "$dir"
+if "`pwd`" != /srv/passenger_autobuilder/app; then
+	echo "passenger_autobuilder MUST be located in /srv/passenger_autobuilder/app."
+	exit 1
+fi
+
+set -x
+cd /srv/passenger_autobuilder
+if ! grep -q psg_autobuilder /etc/group >/dev/null; then
+	sudo addgroup --gid 2456 psg_autobuilder
+fi
+if ! grep -q psg_autobuilder /etc/passwd; then
+	sudo adduser --uid 2456 --gid 2456 --disabled-password --gecos "Passenger Autobuilder" psg_autobuilder
+fi
+if ! grep -q psg_autobuilder_chroot /etc/group >/dev/null; then
+	sudo addgroup --gid 2457 psg_autobuilder_chroot
+fi
+if ! grep -q psg_autobuilder_chroot /etc/passwd; then
+	sudo adduser --uid 2457 --gid 2457 --disabled-password --gecos "Passenger Autobuilder Chroot" psg_autobuilder_chroot
+fi
+
+umask u=rwx,g=rwx,o=rx
+sudo mkdir -p ccache output repos
+sudo chown root: .
+sudo chmod g-w,o-w .
+sudo chown -R psg_autobuilder:psg_autobuilder app
+sudo chown -R psg_autobuilder_chroot:psg_autobuilder_chroot ccache output repos

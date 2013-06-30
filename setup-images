@@ -1,33 +1,11 @@
 #!/bin/bash
 set -e
 
-reset='\x1B[0m'
-bold='\x1B[1m'
-red='\x1B[31m'
-green='\x1B[32m'
-yellow='\x1B[33m'
+PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
+PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
+source "$PASSENGER_AUTOBUILDER_APP/library"
 
 FINAL_STATE=6
-
-function status()
-{
-	echo -e "${yellow}# ${@}${reset}"
-}
-
-function success()
-{
-	echo -e "${green}${@}${reset}"
-}
-
-function warn()
-{
-	echo -e "${yellow}${@}${reset}"
-}
-
-function error()
-{
-	echo -e "${bold}${@}${reset}"
-}
 
 function init_base_tgz()
 {
@@ -58,8 +36,8 @@ function modify_base_tgz()
 	$maybe_linux32 pbuilder execute \
 		--basetgz "$base_tgz.$state" \
 		--save-after-login \
-		--bindmounts /srv/passenger_autobuilder \
-		base-tgz-setup \
+		--bindmounts "$PASSENGER_AUTOBUILDER_ROOT" \
+		pbuilder-environment-installer \
 		"`cat pbuilder-environment`" \
 		"$platform" \
 		"$state"

@@ -1,4 +1,8 @@
 #!/bin/bash
+PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
+PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
+source "$PASSENGER_AUTOBUILDER_APP/library"
+
 base_tgz="$1"
 shift
 if [[ "$base_tgz" = "" ]]; then
@@ -10,4 +14,6 @@ if [[ "$base_tgz" =~ i386 ]]; then
 else
 	maybe_linux32=
 fi
-exec $maybe_linux32 pbuilder login "$@" --bindmounts /srv/passenger_autobuilder --basetgz "$base_tgz"
+exec $maybe_linux32 sudo pbuilder login "$@" \
+	--bindmounts "$PASSENGER_AUTOBUILDER_ROOT" \
+	--basetgz "$base_tgz"

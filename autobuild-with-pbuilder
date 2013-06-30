@@ -1,31 +1,9 @@
 #!/bin/bash
 set -e
 
-reset='\x1B[0m'
-bold='\x1B[1m'
-red='\x1B[31m'
-green='\x1B[32m'
-yellow='\x1B[33m'
-
-function status()
-{
-	echo -e "${yellow}# ${@}${reset}"
-}
-
-function success()
-{
-	echo -e "${green}${@}${reset}"
-}
-
-function warn()
-{
-	echo -e "${yellow}${@}${reset}"
-}
-
-function error()
-{
-	echo -e "${bold}${@}${reset}"
-}
+PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
+PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
+source "$PASSENGER_AUTOBUILDER_APP/library"
 
 git_url="$1"
 name="$2"
@@ -53,13 +31,14 @@ function perform()
 	fi
 
 	status "Performing build: $platform"
-	$maybe_linux32 pbuilder execute \
+	$maybe_linux32 sudo pbuilder execute \
 		--basetgz "$base_tgz" \
-		--bindmounts "/srv/passenger_autobuilder" -- \
-		"/srv/passenger_autobuilder/autobuild-bootstrap-in-pbuilder" \
+		--bindmounts "$PASSENGER_AUTOBUILDER_ROOT" \
+		-- \
+		autobuild-bootstrap-in-pbuilder \
 		"$git_url" "$platform" "$name"
 }
 
-perform lucid-amd64.tgz amd64 ubuntu-10.04-x86_64
+perform lucid-amd64.tgz amd64 linux-x86_64
 if [[ "$only_one" != "" ]]; then exit; fi
-perform lucid-i386.tgz i386 ubuntu-10.04-x86
+perform lucid-i386.tgz i386 linux-x86

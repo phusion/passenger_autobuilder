@@ -1,3 +1,3 @@
 #!/bin/bash
 set -ex
-exec sudo -H -u passenger_autobuilder /srv/passenger_autobuilder/autobuild-bootstrap-after-sudo "$@"
+exec sudo -H -u passenger_autobuilder_chroot /srv/passenger_autobuilder/app/autobuild-bootstrap-after-sudo "$@"

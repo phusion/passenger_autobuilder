@@ -87,35 +87,39 @@ fi
 distro_version=`lsb_release -r | awk '{print $2}'`
 
 if is_step 1; then
+	if ! grep -q psg_autobuilder_chroot /etc/group >/dev/null; then
+		addgroup --gid 2457 psg_autobuilder_chroot
+	fi
+	if ! grep -q psg_autobuilder_chroot /etc/passwd; then
+		adduser --uid 2457 --gid 2457 --disabled-password --gecos "Passenger Autobuilder Chroot" psg_autobuilder_chroot
+	fi
+
 	if [[ $distro_version = 10.04 ]]; then
 		apt_get_install git-core
 	else
 		apt_get_install git
 	fi
-	apt_get_install build-essential ccache wget curl source-highlight lsb-release \
-		less ssh sudo mizuho libpcre3-dev
+	apt_get_install build-essential ccache wget curl less ssh sudo mizuho \
+		source-highlight libpcre3-dev
 fi
 
 if is_step 2; then
 	# Install RVM, Ruby 1.8 and Ruby 1.9.2
-	usermod -a -G sudo passenger_autobuilder
-	sed -i -E 's/^%sudo\tALL=\(ALL:ALL\) ALL$/%sudo  ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
-	sed -i -E 's/^%sudo ALL=\(ALL\) ALL$/%sudo ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
-	[[ -e /usr/local/rvm ]] || (curl -L https://get.rvm.io | sudo -u passenger_autobuilder sudo bash -s stable)
-	usermod -a -G rvm passenger_autobuilder
+	usermod -a -G sudo psg_autobuilder
+	[[ -e /usr/local/rvm ]] || (curl -L https://get.rvm.io | sudo -u psg_autobuilder_chroot -H -E bash -s stable)
 
-	sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.8.7'
-	sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.2'
+	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 1.8.7'
+	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 1.9.2'
 fi
 
 if is_step 3; then
 	# Install Ruby 1.9.3, 2.0.0 and tools
-	sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.3'
-	sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 2.0.0'
-	bash -lc 'rvm --default 1.9.3'
-	sudo -u passenger_autobuilder -H bash -lc 'rvm --default 1.9.3'
-	/usr/local/rvm/bin/rvm cleanup all
-	sudo -u passenger_autobuilder -H bash -lc 'gem install bluecloth --no-rdoc --no-ri'
+	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 1.9.3'
+	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 2.0.0'
+	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm --default 1.9.3'
+	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm --default 1.9.3'
+	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm cleanup all'
+	sudo -u psg_autobuilder_chroot -H -E bash -lc 'gem install bluecloth --no-rdoc --no-ri'
 fi
 
 if is_step 4; then

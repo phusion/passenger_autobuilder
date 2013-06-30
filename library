@@ -1,0 +1,42 @@
+#!/bin/bash
+reset='\x1B[0m'
+bold='\x1B[1m'
+red='\x1B[31m'
+green='\x1B[32m'
+yellow='\x1B[33m'
+
+function status()
+{
+	echo -e "${yellow}# ${@}${reset}"
+}
+
+function success()
+{
+	echo -e "${green}${@}${reset}"
+}
+
+function warn()
+{
+	echo -e "${yellow}${@}${reset}"
+}
+
+function error()
+{
+	echo -e "${bold}${@}${reset}"
+}
+
+if [[ "$PASSENGER_AUTOBUILDER_APP" = "" ]]; then
+	error "This file must be included from one of the passenger_autobuilder apps."
+	exit 1
+fi
+if [[ "$PASSENGER_AUTOBUILDER_APP" != /srv/passenger_autobuilder/app ]]; then
+	error "passenger_autobuilder MUST be located in /srv/passenger_autobuilder/app."
+	exit 1
+fi
+
+PASSENGER_AUTOBUILDER_ROOT=`dirname "$PASSENGER_AUTOBUILDER_APP"`
+PASSENGER_AUTOBUILDER_CCACHE_DIR="$PASSENGER_AUTOBUILDER_ROOT/ccache"
+PASSENGER_AUTOBUILDER_REPOS_DIR="$PASSENGER_AUTOBUILDER_ROOT/repos"
+PASSENGER_AUTOBUILDER_OUTPUT_DIR="$PASSENGER_AUTOBUILDER_ROOT/output"
+
+cd "$PASSENGER_AUTOBUILDER_APP"
