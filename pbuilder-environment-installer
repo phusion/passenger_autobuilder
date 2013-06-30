@@ -99,14 +99,18 @@ if is_step 1; then
 	else
 		apt_get_install git
 	fi
-	apt_get_install build-essential ccache wget curl less ssh sudo mizuho \
-		source-highlight libpcre3-dev
+	apt_get_install build-essential libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev
+	apt_get_install ccache wget curl less ssh sudo mizuho source-highlight libpcre3-dev
 fi
 
 if is_step 2; then
 	# Install RVM, Ruby 1.8 and Ruby 1.9.2
-	usermod -a -G sudo psg_autobuilder
+	usermod -a -G sudo psg_autobuilder_chroot
 	[[ -e /usr/local/rvm ]] || (curl -L https://get.rvm.io | sudo -u psg_autobuilder_chroot -H -E bash -s stable)
+	(
+		export HOME=/home/psg_autobuilder_chroot
+		/home/psg_autobuilder_chroot/.rvm/bin/rvm-exec requirements
+	)
 
 	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 1.8.7'
 	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 1.9.2'
