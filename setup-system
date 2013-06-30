@@ -24,8 +24,10 @@ if ! grep -q psg_autobuilder_chroot /etc/passwd; then
 fi
 
 umask u=rwx,g=rwx,o=rx
-sudo mkdir -p ccache output repos
+sudo mkdir -p output repos
+sudo mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot
 sudo chown root: .
 sudo chmod g-w,o-w .
 sudo chown -R psg_autobuilder:psg_autobuilder app
-sudo chown -R psg_autobuilder_chroot:psg_autobuilder_chroot ccache output repos
+sudo chown -R psg_autobuilder_chroot:psg_autobuilder_chroot output repos ccache/psg_autobuilder_chroot
+sudo chmod o-rx ccache/pbuilder ccache/psg_autobuilder_chroot repos

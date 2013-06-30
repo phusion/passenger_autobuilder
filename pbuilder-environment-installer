@@ -7,7 +7,7 @@ environment="$1"
 platform="$2"
 step="$3"
 eval "$environment"
-export CCACHE_DIR="/srv/passenger_autobuilder/ccache/$platform"
+export CCACHE_DIR="/srv/passenger_autobuilder/ccache/pbuilder/$platform"
 mkdir -p "$CCACHE_DIR"
 cd /tmp
 
@@ -30,6 +30,12 @@ function is_step()
 function apt_get_install()
 {
 	apt-get install -y --no-install-recommends "$@"
+}
+
+function run_as_psg_autobuilder_chroot()
+{
+	sudo -u psg_autobuilder_chroot -H -E bash -lc \
+		"export CCACHE_DIR=/srv/passenger_autobuilder/ccache/psg_autobuilder_chroot/$platform; $1"
 }
 
 function install_apache()
@@ -104,26 +110,27 @@ if is_step 1; then
 fi
 
 if is_step 2; then
-	# Install RVM, Ruby 1.8 and Ruby 1.9.2
+	# Install RVM, Ruby 1.8 and Ruby 1.9.2.
 	usermod -a -G sudo psg_autobuilder_chroot
 	[[ -e /usr/local/rvm ]] || (curl -L https://get.rvm.io | sudo -u psg_autobuilder_chroot -H -E bash -s stable)
 	(
 		export HOME=/home/psg_autobuilder_chroot
 		/home/psg_autobuilder_chroot/.rvm/bin/rvm-exec requirements
+		chown -R psg_autobuilder_chroot:psg_autobuilder_chroot /home/psg_autobuilder_chroot/.rvm
 	)
 
-	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 1.8.7'
-	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 1.9.2'
+	run_as_psg_autobuilder_chroot 'rvm install 1.8.7'
+	run_as_psg_autobuilder_chroot 'rvm install 1.9.2'
 fi
 
 if is_step 3; then
-	# Install Ruby 1.9.3, 2.0.0 and tools
-	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 1.9.3'
-	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm install 2.0.0'
-	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm --default 1.9.3'
-	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm --default 1.9.3'
-	sudo -u psg_autobuilder_chroot -H -E bash -lc 'rvm cleanup all'
-	sudo -u psg_autobuilder_chroot -H -E bash -lc 'gem install bluecloth --no-rdoc --no-ri'
+	# Install Ruby 1.9.3, 2.0.0 and Ruby tools.
+	run_as_psg_autobuilder_chroot 'rvm install 1.9.3'
+	run_as_psg_autobuilder_chroot 'rvm install 2.0.0'
+	run_as_psg_autobuilder_chroot 'rvm --default 1.9.3'
+	run_as_psg_autobuilder_chroot 'rvm --default 1.9.3'
+	run_as_psg_autobuilder_chroot 'rvm cleanup all'
+	run_as_psg_autobuilder_chroot 'gem install bluecloth --no-rdoc --no-ri'
 fi
 
 if is_step 4; then
@@ -161,7 +168,7 @@ if is_step 4; then
 fi
 
 if is_step 5; then
-	# Compile Apaches
+	# Compile Apaches.
 	install_apache 2.0.64 2.0
 	install_apache 2.2.24 2.2 --with-included-apr
 	install_apache 2.4.4 2.4 --with-included-apr --download-apr

@@ -4,7 +4,7 @@ git_url="$1"
 platform="$2"
 name="$3"
 source /srv/passenger_autobuilder/app/pbuilder-environment
-export CCACHE_DIR="/srv/passenger_autobuilder/ccache/$platform"
+export CCACHE_DIR="/srv/passenger_autobuilder/ccache/psg_autobuilder_chroot/$platform"
 repo_dir="/srv/passenger_autobuilder/repos/$name"
 mkdir -p "$CCACHE_DIR"
 exec ~/.rvm/bin/rvm-exec ruby-2.0.0 ruby /srv/passenger_autobuilder/app/autobuild-standalone \
