@@ -1,12 +1,31 @@
 #!/bin/bash
 set -ex
 
+### Basic initialization ###
+
 environment="$1"
 platform="$2"
+step="$3"
 eval "$environment"
 export CCACHE_DIR="/srv/passenger_autobuilder/ccache/$platform"
 mkdir -p "$CCACHE_DIR"
 cd /tmp
+
+# Disable apt-get fsync to make it faster.
+apt_version=`apt-get --version | head -n 1 | awk '{print $2}'`
+[[ "$apt_version" =~ ^([0-9]+)\.([0-9]+) ]]
+if [[ ${BASH_REMATCH[1]} > 0 ]] || [[ ${BASH_REMATCH[1]} == 0 && ${BASH_REMATCH[2]} > 7 ]]; then
+	echo force-unsafe-io > /etc/dpkg/dpkg.cfg.d/02apt-speedup
+fi
+
+
+### Functions ###
+
+function is_step()
+{
+	local query="$1"
+	[[ "$step" = "" || "$step" = "$query" ]]
+}
 
 function apt_get_install()
 {
@@ -40,90 +59,102 @@ function install_apache()
 
 			popd
 		fi
-		./configure --prefix=/usr/local/apache-$compat_version $with_included_apr
+		./configure --prefix=/usr/local/apache-$compat_version \
+			--disable-ssl $with_included_apr
 		make
 		make install
+		rm -f /usr/local/apache-$compat_version/lib/*.a
+		strip --strip-debug /usr/local/apache-$compat_version/lib/*.so
+		if ls /usr/local/apache-$compat_version/modules/*.so >/dev/null 2>/dev/null; then
+			strip --strip-debug /usr/local/apache-$compat_version/modules/*.so
+		fi
 		cd ..
 		rm -rf httpd-$version
 		popd
 	fi
 }
 
-apt_version=`apt-get --version | head -n 1 | awk '{print $2}'`
-[[ "$apt_version" =~ ^([0-9]+)\.([0-9]+) ]]
-if [[ ${BASH_REMATCH[1]} > 0 ]] || [[ ${BASH_REMATCH[1]} == 0 && ${BASH_REMATCH[2]} > 7 ]]; then
-	echo force-unsafe-io > /etc/dpkg/dpkg.cfg.d/02apt-speedup
-fi
 
-if ! grep -q passenger_autobuilder /etc/group; then
-	addgroup --gid 2456 passenger_autobuilder
-fi
-if ! grep -q passenger_autobuilder /etc/passwd; then
-	adduser --uid 2456 --gid 2456 --disabled-password --gecos "Passenger Autobuilder" passenger_autobuilder
-fi
+### Start installation code ###
 
 apt-get update
 apt-get upgrade -y
-apt_get_install python-software-properties lsb-release
-add-apt-repository ppa:phusion.nl/misc
-apt-get update
-
+if [[ ! -f /etc/apt/sources.list.d/phusion.nl-misc-lucid.list ]]; then
+	apt_get_install python-software-properties lsb-release
+	add-apt-repository ppa:phusion.nl/misc
+	apt-get update
+fi
 distro_version=`lsb_release -r | awk '{print $2}'`
 
-if [[ $distro_version = 10.04 ]]; then
-	apt_get_install git-core
-else
-	apt_get_install git
-fi
-apt_get_install build-essential ccache wget curl source-highlight lsb-release \
-	ssh sudo mizuho libpcre3-dev
-
-# Install Ruby and Ruby tools
-usermod -a -G sudo passenger_autobuilder
-sed -i -E 's/^%sudo\tALL=\(ALL:ALL\) ALL$/%sudo  ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
-sed -i -E 's/^%sudo ALL=\(ALL\) ALL$/%sudo ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
-[[ -e /usr/local/rvm ]] || (curl -L https://get.rvm.io | sudo -u passenger_autobuilder sudo bash -s stable)
-usermod -a -G rvm passenger_autobuilder
-
-sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.8.7'
-sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.2'
-sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.3'
-sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 2.0.0'
-bash -lc 'rvm --default 1.9.3'
-sudo -u passenger_autobuilder -H bash -lc 'rvm --default 1.9.3'
-/usr/local/rvm/bin/rvm cleanup all
-
-sudo -u passenger_autobuilder -H bash -lc 'gem install bluecloth --no-rdoc --no-ri'
-
-# Compile a static OpenSSL library.
-if [[ ! -e /usr/local/override/bin/openssl ]]; then
-	wget http://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
-	tar xzvf openssl-$OPENSSL_VERSION.tar.gz
-	rm openssl-$OPENSSL_VERSION.tar.gz
-	cd openssl-$OPENSSL_VERSION
-	./config --prefix=/usr/local/override --openssldir=/usr/local/override/openssl threads zlib no-shared no-sse2
-	make
-	make install_sw
-	cd ..
-	rm -rf openssl-$OPENSSL_VERSION
+if is_step 1; then
+	if [[ $distro_version = 10.04 ]]; then
+		apt_get_install git-core
+	else
+		apt_get_install git
+	fi
+	apt_get_install build-essential ccache wget curl source-highlight lsb-release \
+		less ssh sudo mizuho libpcre3-dev
 fi
 
-# Compile a minimalist libcurl with almost no dependencies.
-if [[ ! -e /usr/local/override/bin/curl ]]; then
-	wget http://curl.haxx.se/download/curl-$CURL_VERSION.tar.bz2
-	tar xjvf curl-$CURL_VERSION.tar.bz2
-	rm curl-$CURL_VERSION.tar.bz2
-	cd curl-$CURL_VERSION
-	./configure --prefix=/usr/local/override --disable-shared --disable-manual --disable-ldap --disable-ldaps \
-		--disable-rtsp --disable-dict --disable-ftp --disable-ftps --disable-gopher --disable-imap \
-		--disable-imaps --disable-pop3 --disable-pop3s --without-librtmp --disable-smtp --disable-smtps \
-		--disable-telnet --disable-tftp --without-libmetalink --without-libidn
-	make install-strip
-	cd ..
-	rm -rf curl-$CURL_VERSION
+if is_step 2; then
+	# Install RVM, Ruby 1.8 and Ruby 1.9.2
+	usermod -a -G sudo passenger_autobuilder
+	sed -i -E 's/^%sudo\tALL=\(ALL:ALL\) ALL$/%sudo  ALL=(ALL:ALL) NOPASSWD: ALL/' /etc/sudoers
+	sed -i -E 's/^%sudo ALL=\(ALL\) ALL$/%sudo ALL=(ALL) NOPASSWD: ALL/' /etc/sudoers
+	[[ -e /usr/local/rvm ]] || (curl -L https://get.rvm.io | sudo -u passenger_autobuilder sudo bash -s stable)
+	usermod -a -G rvm passenger_autobuilder
+
+	sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.8.7'
+	sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.2'
 fi
 
-# Compile Apaches
-install_apache 2.0.64 2.0
-install_apache 2.2.24 2.2 --with-included-apr
-install_apache 2.4.4 2.4 --with-included-apr --download-apr
+if is_step 3; then
+	# Install Ruby 1.9.3, 2.0.0 and tools
+	sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 1.9.3'
+	sudo -u passenger_autobuilder -H -E bash -lc 'rvm install 2.0.0'
+	bash -lc 'rvm --default 1.9.3'
+	sudo -u passenger_autobuilder -H bash -lc 'rvm --default 1.9.3'
+	/usr/local/rvm/bin/rvm cleanup all
+	sudo -u passenger_autobuilder -H bash -lc 'gem install bluecloth --no-rdoc --no-ri'
+fi
+
+if is_step 4; then
+	# Compile a static OpenSSL library.
+	if [[ ! -e /usr/local/override/bin/openssl ]]; then
+		wget http://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
+		tar xzvf openssl-$OPENSSL_VERSION.tar.gz
+		rm openssl-$OPENSSL_VERSION.tar.gz
+		cd openssl-$OPENSSL_VERSION
+		./config --prefix=/usr/local/override --openssldir=/usr/local/override/openssl \
+			threads zlib no-shared no-sse2
+		make
+		make install_sw
+		strip --strip-all /usr/local/override/bin/openssl
+		strip --strip-debug /usr/local/override/lib/libcrypto.a
+		strip --strip-debug /usr/local/override/lib/libssl.a
+		cd ..
+		rm -rf openssl-$OPENSSL_VERSION
+	fi
+
+	# Compile a minimalist libcurl with almost no dependencies.
+	if [[ ! -e /usr/local/override/bin/curl ]]; then
+		wget http://curl.haxx.se/download/curl-$CURL_VERSION.tar.bz2
+		tar xjvf curl-$CURL_VERSION.tar.bz2
+		rm curl-$CURL_VERSION.tar.bz2
+		cd curl-$CURL_VERSION
+		./configure --prefix=/usr/local/override --disable-shared --disable-manual --disable-ldap --disable-ldaps \
+			--disable-rtsp --disable-dict --disable-ftp --disable-ftps --disable-gopher --disable-imap \
+			--disable-imaps --disable-pop3 --disable-pop3s --without-librtmp --disable-smtp --disable-smtps \
+			--disable-telnet --disable-tftp --without-libmetalink --without-libidn
+		make install-strip
+		cd ..
+		rm -rf curl-$CURL_VERSION
+	fi
+fi
+
+if is_step 5; then
+	# Compile Apaches
+	install_apache 2.0.64 2.0
+	install_apache 2.2.24 2.2 --with-included-apr
+	install_apache 2.4.4 2.4 --with-included-apr --download-apr
+fi

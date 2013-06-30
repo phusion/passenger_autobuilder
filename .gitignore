@@ -1,4 +1,4 @@
-*.tgz
+*.tgz*
 /ccache
 /repo
 /output

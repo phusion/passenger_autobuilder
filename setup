@@ -7,6 +7,8 @@ red='\x1B[31m'
 green='\x1B[32m'
 yellow='\x1B[33m'
 
+FINAL_STATE=6
+
 function status()
 {
 	echo -e "${yellow}# ${@}${reset}"
@@ -42,41 +44,63 @@ function init_base_tgz()
 	$maybe_linux32 pbuilder create --basetgz "$base_tgz.initiating" \
 		--distribution $distro --architecture $arch \
 		--override-config --components "main universe"
-	mv "$base_tgz.initiating" "$base_tgz.initial"
+	mv "$base_tgz.initiating" "$base_tgz.1"
 }
 
 function modify_base_tgz()
 {
-	local base_tgz
-	local platform
-	local maybe_linux32
-	base_tgz="$1"
-	platform="$2"
-	maybe_linux32="$3"
+	local base_tgz="$1"
+	local platform="$2"
+	local maybe_linux32="$3"
+	local state="$4"
 
-	status "Installing necessary software in $base_tgz..."
+	status "Installing necessary software in $base_tgz (step $state)..."
 	$maybe_linux32 pbuilder execute \
-		--basetgz "$base_tgz.initial" \
+		--basetgz "$base_tgz.$state" \
 		--save-after-login \
 		--bindmounts /srv/passenger_autobuilder \
 		base-tgz-setup \
 		"`cat pbuilder-environment`" \
-		"$platform"
-	mv "$base_tgz.initial" "$base_tgz"
+		"$platform" \
+		"$state"
+	
+	local next_state="$state"
+	(( next_state++ ))
+	if [[ $next_state == $FINAL_STATE ]]; then
+		mv "$base_tgz.$state" "$base_tgz"
+	else
+		mv "$base_tgz.$state" "$base_tgz.$next_state"
+	fi
+}
+
+function get_base_tgz_state()
+{
+	local base_tgz="$1"
+	local i
+
+	if [[ -f "$base_tgz" ]]; then
+		echo final
+		return
+	fi
+	
+	for i in $(seq 1 $FINAL_STATE); do
+		if [[ -f "$base_tgz.$i" ]]; then
+			echo $i
+			return
+		fi
+	done
+
+	echo 0
 }
 
 function create_base_tgz()
 {
-	local base_tgz
-	local distro
-	local arch
-	local platform
+	local base_tgz="$1"
+	local distro="$2"
+	local arch="$3"
+	local platform="$4"
 	local maybe_linux32
 
-	base_tgz="$1"
-	distro="$2"
-	arch="$3"
-	platform="$4"
 	if [[ $arch == i386 ]]; then
 		maybe_linux32=linux32
 	else
@@ -85,16 +109,35 @@ function create_base_tgz()
 
 	if [[ -f "$base_tgz" ]]; then
 		success "$base_tgz already exists"
-	elif [[ -f "$base_tgz.initial" ]]; then
-		modify_base_tgz "$base_tgz" "$platform" "$maybe_linux32"
-	else
-		init_base_tgz "$base_tgz" "$distro" "$arch" "$maybe_linux32"
-		modify_base_tgz "$base_tgz" "$platform" "$maybe_linux32"
+		return
 	fi
+
+	# Installation of the base.tgz is done in steps so that if one step fails (e.g.
+	# because of temporary internet failure), we don't have to redo everything.
+	local state=`get_base_tgz_state "$base_tgz"`
+	while [[ $state != final ]]; do
+		if [[ $state = 0 ]]; then
+			init_base_tgz "$base_tgz" "$distro" "$arch" "$maybe_linux32"
+		else
+			modify_base_tgz "$base_tgz" "$platform" "$maybe_linux32" "$state"
+		fi
+		state=`get_base_tgz_state "$base_tgz"`
+	done
 }
 
-only_one="$1"
+only_one=
+for arg in "$@"; do
+	case "$arg" in
+	--only-one)
+		only_one=1
+		;;
+	*)
+		echo "Invalid argument $arg"
+		exit 1
+		;;
+	esac
+done
 
 create_base_tgz lucid-amd64.tgz lucid amd64 ubuntu-10.04-x86_64
-if [[ "$only_one" != "" ]]; then exit; fi
+if [[ $only_one = 1 ]]; then exit; fi
 create_base_tgz lucid-i386.tgz lucid i386 ubuntu-10.04-x86
