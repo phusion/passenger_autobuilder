@@ -1,6 +1,8 @@
 # Passenger Binary Builder Automation System
 
-This repository contains scripts for automating the building of Linux binaries for [Phusion Passenger](https://www.phusionpassenger.com/). It provides a build environment that is built with pbuilder. The build environment is based on Ubuntu 10.04 and is custom-built to be able to generate Linux binaries that run on a wide range of Linux distributions. Because building binaries involves running build systems that may execute arbitrary code, passenger_autobuilder utilizes multiple user accounts, plus the use of sudo, to protect against build systems wrecking havoc on the system.
+This repository contains scripts for automating the building of Linux binaries for [Phusion Passenger](https://www.phusionpassenger.com/). It provides a build environment that is built with pbuilder. The build environment is based on Ubuntu 10.04 and is custom-built to be able to generate Linux binaries that can run on a wide range of Linux distributions.
+
+Because building binaries involves running build systems that may execute arbitrary code, passenger_autobuilder utilizes multiple user accounts, plus the use of sudo, to protect against build systems wrecking havoc on the system.
 
 passenger_autobuilder must be run on a 64-bit Debian-compatible system. It builds x86 and x86-64 binaries. All dependencies besides glibc are statically linked into the produced binaries. The latest glibc symbol version that the produced binaries utilize is `GLIBC_2.11`, which should make the binaries compatible with all Linux distributions starting from 2009. This includes Ubuntu >= 10.04, Debian >= 6 and Red Hat >= 6.
 
@@ -18,12 +20,13 @@ Binaries for Nginx are also generated. The Nginx version that will be compiled i
 
 The Nginx binary is built with prefix `/tmp` which will make it store log files, proxy_module buffer files, etc in `/tmp` by default. Such a prefix has the useful property of working on almost any system, but this prefix should not be used in production because of potential security issues. To solve this, you must there run the Nginx binary with the `-p` option to force it to use a different prefix (e.g. `-p /opt/local/nginx`).
 
+passenger_autobuilder can optionally be configured to sign the built binaries using GPG, either by running GPG locally or by forwarding the data through SSH to a remote host for signing. The latter approach provides additional security: in case the build host is compromised, the signing key is not.
+
 ## Requirements
 
  * A 64-bit kernel
- * pbuilder
- * gpg
- * sudo
+ * `apt-get install pbuilder`
+ * `apt-get install sudo`
 
 ## Getting started
 
