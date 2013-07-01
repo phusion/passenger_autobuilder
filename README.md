@@ -37,3 +37,7 @@ To build binaries for the latest git commit, run the following as `psg_autobuild
 Build output will be stored in `/srv/passenger_autobuilder/output/<NAME>`. For example, you can run:
 
     ./autobuild-with-pbuilder https://github.com/FooBarWidget/passenger.git passenger
+
+To build binaries for a tag (a release), add the `--tag=...` option, like this:
+
+    ./autobuild-with-pbuilder https://github.com/FooBarWidget/passenger.git passenger --tag=release-4.0.6

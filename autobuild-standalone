@@ -26,17 +26,19 @@ class Autobuild
     inspect_codebase
     fetch_nginx
     if already_built?
-      log "Already built commit #{@commit}. Exiting."
+      log "Already built commit #{@commit}."
     else
       recompile_passenger
       recompile_nginx
       begin
-        build_tarballs
+        save_build_output
       rescue Exception
-        remove_tarballs
+        remove_built_output
         raise
       end
     end
+    setup_index_symlinks
+    create_release_file
   end
 
 private
@@ -58,14 +60,21 @@ private
       opts.on("--repo-dir DIR", String, "The directory in which to store the repository") do |val|
         @options[:repo_dir] = File.expand_path(val)
       end
+      opts.on("--tag NAME", String, "Checkout a specific git tag") do |val|
+        @options[:tag] = val
+      end
       opts.on("--output-dir DIR", String, "The directory in which to store binaries") do |val|
         @options[:output_dir] = File.expand_path(val)
       end
-      opts.on("--work-tag NAME", String, "A tag to prevent duplicate builts") do |val|
+      opts.on("--work-tag NAME", String, "A tag to prevent duplicate builts. A file in " +
+        "the output directory will be created using this tag name") do |val|
         @options[:work_tag] = val
       end
       opts.on("--result-file FILE", String, "Save output filenames to this file") do |val|
         @options[:result_file] = val
+      end
+      opts.on("--dry-run", "Do everything exception compiling") do
+        @options[:dry_run] = true
       end
       opts.on("--help", "-h", "Show help message") do
         @options[:help] = true
@@ -118,13 +127,22 @@ private
     cd_repo_dir
     sh "rm -rf *"
     sh "git fetch"
-    sh "git reset --hard origin/master"
+    reset_to_requested_commit
   end
 
   def git_clone
     mkdir_p @options[:repo_dir], :verbose => true
     sh "git", "clone", @options[:git_url], passenger_code_dir
     cd_repo_dir
+    reset_to_requested_commit
+  end
+
+  def reset_to_requested_commit
+    if @options[:tag]
+      sh "git reset --hard '#{@options[:tag]}'"
+    else
+      sh "git reset --hard origin/master"
+    end
   end
 
   def cd_repo_dir
@@ -162,10 +180,11 @@ private
   end
 
   def work_tag_filename
-    "#{@options[:output_dir]}/by_commit/#{@commit}/built-#{@options[:work_tag]}.txt"
+    "#{output_commit_subdir}/built-#{@options[:work_tag]}.txt"
   end
 
   def recompile_passenger
+    return if @options[:dry_run]
     sh "~/.rvm/bin/rvm-exec ruby-1.8.7 rake native_support"
     sh "~/.rvm/bin/rvm-exec ruby-1.9.2 rake native_support"
     sh "~/.rvm/bin/rvm-exec ruby-1.9.3 rake native_support"
@@ -193,10 +212,13 @@ private
   end
 
   def recompile_nginx
+    return if @options[:dry_run]
+
     env = {
       # Nginx's OpenSSL detection is broken w.r.t. static OpenSSL libraries.
       'CC' => ENV['CC'] + ' -lz -ldl'
     }
+
     Dir.chdir("buildout") do
       sh "tar", "xzvf", nginx_tarball
       Dir.chdir(nginx_basename) do
@@ -221,35 +243,60 @@ private
     end
   end
 
-  def build_tarballs
-    commit_dir = "#{@options[:output_dir]}/by_commit/#{@commit}"
-    date_dir   = "#{@options[:output_dir]}/by_date/#{Date.today}"
-
-    log "Archiving binaries to #{commit_dir}"
-    make_output_subdir(commit_dir)
-
-    Dir["buildout/ruby/*"].each do |subdir|
-      name = File.basename(subdir)
-      maketar "#{commit_dir}/rubyext-#{name}.tar.gz", ["."], "buildout/ruby/#{name}"
-    end
-    maketar "#{commit_dir}/support-#{binary_compat_id}.tar.gz",
-      ["agents", "common"], "buildout"
-
-    APACHE_VERSIONS.each do |version|
-      maketar "#{commit_dir}/apache-#{version}-#{binary_compat_id}.tar.gz",
-        ["mod_passenger.so"], "buildout/apache-#{version}"
-    end
-
-    maketar "#{commit_dir}/#{nginx_basename}-#{binary_compat_id}.tar.gz",
-      ["nginx"], "buildout/#{nginx_basename}/objs"
-
-    log "Setting date symlink"
-    make_output_subdir("#{@options[:output_dir]}/by_date")
-    rm_f date_dir, :verbose => true
-    ln_s commit_dir, date_dir, :verbose => true
-
+  def save_build_output
+    build_tarballs(output_commit_subdir)
     sh "touch", work_tag_filename
+    create_result_file
+  end
 
+  def build_tarballs(output_dir)
+    log "Saving binaries to #{output_dir}"
+    make_output_subdir(output_dir)
+
+    if @options[:dry_run]
+      log "--dry-run given, not creating tarballs"
+    else
+      Dir["buildout/ruby/*"].each do |subdir|
+        name = File.basename(subdir)
+        maketar "#{output_dir}/rubyext-#{name}.tar.gz", ["."], "buildout/ruby/#{name}"
+      end
+      maketar "#{output_dir}/support-#{binary_compat_id}.tar.gz",
+        ["agents", "common"], "buildout"
+
+      APACHE_VERSIONS.each do |version|
+        maketar "#{output_dir}/apache-#{version}-#{binary_compat_id}.tar.gz",
+          ["mod_passenger.so"], "buildout/apache-#{version}"
+      end
+
+      maketar "#{output_dir}/#{nginx_basename}-#{binary_compat_id}.tar.gz",
+        ["nginx"], "buildout/#{nginx_basename}/objs"
+    end
+  end
+
+  def setup_index_symlinks
+    create_symlink_to_commit_subdir(output_date_path)
+    create_symlink_to_commit_subdir(output_tag_path) if @options[:tag]
+  end
+
+  # Save a file in the commit directory that tells the user what tag this came from.
+  def create_release_file
+    if @options[:tag]
+      filename = "#{output_commit_subdir}/RELEASE-VERSION.TXT"
+      log "Creating release file #{filename}"
+      File.open(filename, "w") do |f|
+        f.puts @options[:tag]
+      end
+    end
+  end
+
+  def create_symlink_to_commit_subdir(symlink_path)
+    log "Creating directory symlink #{symlink_path} to commit #{@commit}"
+    make_output_subdir(File.dirname(symlink_path))
+    rm_f symlink_path, :verbose => true
+    ln_s output_commit_subdir, symlink_path, :verbose => true
+  end
+
+  def create_result_file
     if @options[:result_file]
       log "Writing output filenames to #{@options[:result_file]}"
       File.open(@options[:result_file], "w") do |f|
@@ -260,7 +307,7 @@ private
     end
   end
 
-  def remove_tarballs
+  def remove_build_output
     log "An error occurred. Rolling back..."
     @output_files.each do |filename|
       sh "rm", "-f", filename
@@ -295,6 +342,21 @@ private
     "#{@options[:repo_dir]}/main"
   end
 
+  def output_commit_subdir
+    "#{@options[:output_dir]}/by_commit/#{@commit}"
+  end
+
+  def output_date_path
+    "#{@options[:output_dir]}/by_date/#{Date.today}"
+  end
+
+  def output_tag_path
+    "#{@options[:output_dir]}/by_release/#{@options[:tag]}"
+  end
+
+  # Create a directory tree with the right permissions. Every directory
+  # must be sticky and group-writable, so that the psg_autobuilder_run
+  # user can create signatures.
   def make_output_subdir(dir)
     infer_nonexistant_subdirs(dir).each do |subdir|
       log "mkdir #{subdir}"

@@ -6,14 +6,10 @@ PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
 source "$PASSENGER_AUTOBUILDER_APP/library"
 source "$PASSENGER_AUTOBUILDER_APP/signing_configuration"
 
-git_url="$1"
-name="$2"
-only_one="$3"
-
-if [[ "$git_url" = "" || "$name" = "" ]]; then
-	echo "Usage: ./autobuild-with-pbuilder GIT_URL NAME [--only-one]"
-	exit 1
-fi
+function usage()
+{
+	echo "Usage: ./autobuild-with-pbuilder GIT_URL NAME [--only-one] [--tag=TAG] [--dry-run]"
+}
 
 function sign()
 {
@@ -48,7 +44,8 @@ function perform()
 		--bindmounts "$PASSENGER_AUTOBUILDER_ROOT" \
 		-- \
 		"$PASSENGER_AUTOBUILDER_APP/autobuild-bootstrap-in-pbuilder" \
-		"$git_url" "$platform" "$name" "$result_file"
+		"$name" "$platform" \
+		"--git-url=$git_url" "--result-file=$result_file" "${extra_args[@]}"
 	if [[ -f "$result_file" ]]; then
 		local generated_files=`cat "$result_file"`
 		rm -f "$result_file"
@@ -56,6 +53,33 @@ function perform()
 		sign $generated_files
 	fi
 }
+
+git_url="$1"
+name="$2"
+only_one=
+extra_args=()
+shift
+shift
+
+for arg in "$@"; do
+	case "$arg" in
+	--only-one)
+		only_one=1
+		;;
+	--tag=* | --dry-run)
+		extra_args+=("$arg")
+		;;
+	*)
+		echo "Invalid argument $arg"
+		exit 1
+		;;
+	esac
+done
+
+if [[ "$git_url" = "" || "$name" = "" ]]; then
+	usage
+	exit 1
+fi
 
 perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-amd64.tgz" amd64 linux-x86_64
 if [[ "$only_one" != "" ]]; then exit; fi

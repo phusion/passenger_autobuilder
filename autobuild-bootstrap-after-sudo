@@ -1,10 +1,10 @@
 #!/bin/bash
 set -ex
 
-git_url="$1"
+name="$1"
 platform="$2"
-name="$3"
-result_file="$4"
+shift
+shift
 
 source /srv/passenger_autobuilder/app/pbuilder-environment
 export CCACHE_DIR="/srv/passenger_autobuilder/ccache/psg_autobuilder_chroot/$platform"
@@ -24,8 +24,7 @@ B0F4253373F8F6F510D42178520A9993A1C052F8:6:
 EOF
 
 exec ~/.rvm/bin/rvm-exec ruby-2.0.0 ruby /srv/passenger_autobuilder/app/autobuild-standalone \
-	--git-url "$git_url" \
 	--repo-dir "$repo_dir" \
 	--output-dir "/srv/passenger_autobuilder/output/$name" \
 	--work-tag "$platform" \
-	--result-file "$result_file"
+	"$@"
