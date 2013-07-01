@@ -9,6 +9,7 @@ result_file="$4"
 source /srv/passenger_autobuilder/app/pbuilder-environment
 export CCACHE_DIR="/srv/passenger_autobuilder/ccache/psg_autobuilder_chroot/$platform"
 
+umask u=rwx,g=rwx,o=rx
 repo_dir="/srv/passenger_autobuilder/repos/$name"
 mkdir -p "$CCACHE_DIR"
 

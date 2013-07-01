@@ -226,7 +226,7 @@ private
     date_dir   = "#{@options[:output_dir]}/by_date/#{Date.today}"
 
     log "Archiving binaries to #{commit_dir}"
-    mkdir_p commit_dir, :verbose => true, :mode => 0775
+    make_output_subdir(commit_dir)
 
     Dir["buildout/ruby/*"].each do |subdir|
       name = File.basename(subdir)
@@ -244,7 +244,7 @@ private
       ["nginx"], "buildout/#{nginx_basename}/objs"
 
     log "Setting date symlink"
-    mkdir_p "#{@options[:output_dir]}/by_date", :verbose => true
+    make_output_subdir("#{@options[:output_dir]}/by_date")
     rm_f date_dir, :verbose => true
     ln_s commit_dir, date_dir, :verbose => true
 
@@ -293,6 +293,26 @@ private
 
   def passenger_code_dir
     "#{@options[:repo_dir]}/main"
+  end
+
+  def make_output_subdir(dir)
+    infer_nonexistant_subdirs(dir).each do |subdir|
+      log "mkdir #{subdir}"
+      Dir.mkdir(subdir, 0771)
+      if !File.setgid?(subdir)
+        sh "chmod", "g+s", subdir
+      end
+    end
+  end
+
+  def infer_nonexistant_subdirs(dirname)
+    dirs = []
+    while dirname != "/" && !File.exist?(dirname)
+      dirs << dirname
+      dirname = File.dirname(dirname)
+    end
+    dirs.reverse!
+    dirs
   end
 
   def sh(command, *args)
