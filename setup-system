@@ -42,7 +42,7 @@ sudo chown -R psg_autobuilder_run:psg_autobuilder_chroot run
 
 sudo chmod o-rx ccache/pbuilder ccache/psg_autobuilder_chroot repos
 sudo chmod 755 app
-sudo chmod 775 output
+sudo chmod u=rwx,g=rwx,o=x output
 sudo chmod 770 run
 
 sudo cp app/sudoers.conf /etc/sudoers.d/passenger_autobuilder
