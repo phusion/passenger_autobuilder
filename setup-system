@@ -29,12 +29,28 @@ create_user psg_autobuilder_chroot "Passenger Autobuilder Chroot" 2457
 create_user psg_autobuilder_run "Passenger Autobuilder Run" 2458
 
 umask u=rwx,g=rwx,o=rx
-sudo mkdir -p output repos images
-sudo mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot
 sudo chown root: .
 sudo chmod g-w,o-w .
+
+sudo mkdir -p output repos images run
+sudo mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot
+
 sudo chown -R psg_autobuilder:psg_autobuilder app
-sudo chown -R psg_autobuilder_chroot:psg_autobuilder_chroot output repos ccache/psg_autobuilder_chroot
+sudo chown -R psg_autobuilder_chroot:psg_autobuilder_chroot repos ccache/psg_autobuilder_chroot
+sudo chown -R psg_autobuilder_chroot:psg_autobuilder_run output
+sudo chown -R psg_autobuilder_run:psg_autobuilder_chroot run
+
 sudo chmod o-rx ccache/pbuilder ccache/psg_autobuilder_chroot repos
+sudo chmod 755 app
+sudo chmod 775 output
+sudo chmod 770 run
+
 sudo cp app/sudoers.conf /etc/sudoers.d/passenger_autobuilder
 sudo chmod 440 /etc/sudoers.d/passenger_autobuilder
+
+if [[ ! -f app/signing_configuration ]]; then
+	sudo cp app/signing_configuration.example app/signing_configuration
+	sudo nano app/signing_configuration
+fi
+sudo chown psg_autobuilder_run:psg_autobuilder_run app/signing_configuration
+sudo chmod 600 app/signing_configuration

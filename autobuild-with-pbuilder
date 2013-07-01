@@ -4,6 +4,7 @@ set -e
 PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
 PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
 source "$PASSENGER_AUTOBUILDER_APP/library"
+source "$PASSENGER_AUTOBUILDER_APP/signing_configuration"
 
 git_url="$1"
 name="$2"
@@ -13,6 +14,16 @@ if [[ "$git_url" = "" || "$name" = "" ]]; then
 	echo "Usage: ./autobuild-with-pbuilder GIT_URL NAME [--only-one]"
 	exit 1
 fi
+
+function sign()
+{
+	for F in "$@"; do
+		status "Signing $F"
+		rm -f "$F.asc"
+		gpg --batch --armor --local-user "$SIGNING_KEY" --detach-sign \
+			--passphrase-fd 3 "$F" 3<<<"$SIGNING_KEY_PASSWORD"
+	done
+}
 
 function perform()
 {
@@ -31,14 +42,22 @@ function perform()
 	fi
 
 	status "Performing build: $platform"
+	local result_file="$PASSENGER_AUTOBUILDER_RUN_DIR/result-$$.txt"
 	$maybe_linux32 sudo /usr/sbin/pbuilder execute \
 		--basetgz "$base_tgz" \
 		--bindmounts "$PASSENGER_AUTOBUILDER_ROOT" \
 		-- \
 		"$PASSENGER_AUTOBUILDER_APP/autobuild-bootstrap-in-pbuilder" \
-		"$git_url" "$platform" "$name"
+		"$git_url" "$platform" "$name" "$result_file"
+	if [[ -f "$result_file" ]]; then
+		local generated_files=`cat "$result_file"`
+		rm -f "$result_file"
+		status "Signing output files for platform $platform"
+		sign $generated_files
+	fi
 }
 
 perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-amd64.tgz" amd64 linux-x86_64
 if [[ "$only_one" != "" ]]; then exit; fi
 perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-i386.tgz" i386 linux-x86
+success "All done!"

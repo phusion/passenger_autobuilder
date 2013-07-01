@@ -14,6 +14,10 @@ class Autobuild
 
   include FileUtils
 
+  def initialize
+    @output_files = []
+  end
+
   def start
     parse_options
     set_environment
@@ -24,7 +28,12 @@ class Autobuild
       log "Already built commit #{@commit}. Exiting."
     else
       recompile
-      copy_over_binaries
+      begin
+        build_tarballs
+      rescue Exception
+        remove_tarballs
+        raise
+      end
     end
   end
 
@@ -52,6 +61,9 @@ private
       end
       opts.on("--work-tag NAME", String, "A tag to prevent duplicate builts") do |val|
         @options[:work_tag] = val
+      end
+      opts.on("--result-file FILE", String, "Save output filenames to this file") do |val|
+        @options[:result_file] = val
       end
       opts.on("--help", "-h", "Show help message") do
         @options[:help] = true
@@ -158,23 +170,23 @@ private
     sh "rm", "-f", *Dir["buildout/ruby/*/{Makefile,mkmf.log,*.o}"]
   end
 
-  def copy_over_binaries
+  def build_tarballs
     commit_dir = "#{@options[:output_dir]}/by_commit/#{@commit}"
     date_dir   = "#{@options[:output_dir]}/by_date/#{Date.today}"
 
     log "Archiving binaries to #{commit_dir}"
-    mkdir_p commit_dir, :verbose => true
+    mkdir_p commit_dir, :verbose => true, :mode => 0775
 
     Dir["buildout/ruby/*"].each do |subdir|
       name = File.basename(subdir)
-      sh "tar", "-czf", "#{commit_dir}/rubyext-#{name}.tar.gz", ".", :chdir => "buildout/ruby/#{name}"
+      maketar "#{commit_dir}/rubyext-#{name}.tar.gz", ["."], "buildout/ruby/#{name}"
     end
-    sh "tar", "-czf", "#{commit_dir}/support-#{binary_compat_id}.tar.gz",
-      "agents", "common", :chdir => "buildout"
+    maketar "#{commit_dir}/support-#{binary_compat_id}.tar.gz",
+      ["agents", "common"], "buildout"
 
     APACHE_VERSIONS.each do |version|
-      sh "tar", "-czf", "#{commit_dir}/apache-#{version}-#{binary_compat_id}.tar.gz",
-        "mod_passenger.so", :chdir => "buildout/apache-#{version}"
+      maketar "#{commit_dir}/apache-#{version}-#{binary_compat_id}.tar.gz",
+        ["mod_passenger.so"], "buildout/apache-#{version}"
     end
 
     log "Setting date symlink"
@@ -183,10 +195,34 @@ private
     ln_s commit_dir, date_dir, :verbose => true
 
     sh "touch", work_tag_filename
+
+    if @options[:result_file]
+      log "Writing output filenames to #{@options[:result_file]}"
+      File.open(@options[:result_file], "w") do |f|
+        @output_files.each do |filename|
+          f.puts filename
+        end
+      end
+    end
+  end
+
+  def remove_tarballs
+    log "An error occurred. Rolling back..."
+    @output_files.each do |filename|
+      sh "rm", "-f", filename
+    end
+    sh "rm", "-f", work_tag_filename
   end
 
   def binary_compat_id
     @binary_compat_id ||= `./bin/passenger-config --cxx-compat-id`.strip
+  end
+
+  def maketar(filename, input, chdir = nil)
+    args = ["tar", "-czf", filename, *input]
+    args << { :chdir => chdir } if chdir
+    sh(*args)
+    @output_files << filename
   end
 
   def sh(command, *args)

@@ -1,5 +1,7 @@
 # Getting started
 
+Install:
+
     sudo mkdir /srv/passenger_autobuilder
     sudo git clone https://github.com/phusion/passenger_autobuilder.git /srv/passenger_autobuilder/app
     cd /srv/passenger_autobuilder/app

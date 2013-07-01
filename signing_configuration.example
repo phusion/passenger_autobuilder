@@ -1,0 +1,13 @@
+# This is the configuration file that governs PGP signing of the build results.
+# Signing operations are initiated by the 'psg_autobuilder_run' user. You
+# must import your key into that user's GPG keyring, and specify its details in
+# this file.
+#
+# After closing this editor, the installer will make this file accessible only
+# to the 'psg_autobuilder_run' user.
+
+# Specify the ID or email of your signing key here.
+SIGNING_KEY=""
+
+# Specify signing key password here.
+SIGNING_KEY_PASSWORD=""
