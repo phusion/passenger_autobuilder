@@ -24,10 +24,12 @@ class Autobuild
     initialize_logger
     fetch_latest_code
     inspect_codebase
+    fetch_nginx
     if already_built?
       log "Already built commit #{@commit}. Exiting."
     else
-      recompile
+      recompile_passenger
+      recompile_nginx
       begin
         build_tarballs
       rescue Exception
@@ -105,7 +107,7 @@ private
   end
 
   def fetch_latest_code
-    if File.exist?(@options[:repo_dir])
+    if File.exist?(passenger_code_dir)
       git_fetch_and_reset
     else
       git_clone
@@ -120,19 +122,39 @@ private
   end
 
   def git_clone
-    sh "git", "clone", @options[:git_url], @options[:repo_dir]
+    mkdir_p @options[:repo_dir], :verbose => true
+    sh "git", "clone", @options[:git_url], passenger_code_dir
     cd_repo_dir
   end
 
   def cd_repo_dir
-    log "cd #{@options[:repo_dir]}"
-    Dir.chdir(@options[:repo_dir])
+    log "cd #{passenger_code_dir}"
+    Dir.chdir(passenger_code_dir)
   end
 
   def inspect_codebase
     lines = `git show --pretty='format:%h\n%H\n%s' -s`.split("\n")
     @commit, @sha, @subject = lines
     log "Commit #{@commit}: #{@subject}"
+    File.read("lib/phusion_passenger.rb") =~ /PREFERRED_NGINX_VERSION *= *'(.+)'/
+    @preferred_nginx_version = $1
+  end
+
+  def fetch_nginx
+    log "Downloading Nginx #{@preferred_nginx_version}"
+    if File.exist?(nginx_tarball)
+      log "Tarball #{nginx_tarball} already exists. Skipping download."
+    else
+      sh "rm", "-f", nginx_tarball, nginx_tarball + ".asc"
+      sh "wget", nginx_url, "-O", nginx_tarball
+      sh "wget", nginx_url + ".asc", "-O", nginx_tarball + ".asc"
+      begin
+        sh "gpg", "--verify", nginx_tarball + ".asc"
+      rescue SystemExit
+        sh "rm", "-f", nginx_tarball, nginx_tarball + ".asc"
+        raise "Cannot verify Nginx tarball signature"
+      end
+    end
   end
 
   def already_built?
@@ -143,7 +165,7 @@ private
     "#{@options[:output_dir]}/by_commit/#{@commit}/built-#{@options[:work_tag]}.txt"
   end
 
-  def recompile
+  def recompile_passenger
     sh "~/.rvm/bin/rvm-exec ruby-1.8.7 rake native_support"
     sh "~/.rvm/bin/rvm-exec ruby-1.9.2 rake native_support"
     sh "~/.rvm/bin/rvm-exec ruby-1.9.3 rake native_support"
@@ -170,6 +192,35 @@ private
     sh "rm", "-f", *Dir["buildout/ruby/*/{Makefile,mkmf.log,*.o}"]
   end
 
+  def recompile_nginx
+    env = {
+      # Nginx's OpenSSL detection is broken w.r.t. static OpenSSL libraries.
+      'CC' => ENV['CC'] + ' -lz -ldl'
+    }
+    Dir.chdir("buildout") do
+      sh "tar", "xzvf", nginx_tarball
+      Dir.chdir(nginx_basename) do
+        sh env, "./configure " <<
+          "--prefix=/tmp " <<
+          "--with-cc-opt='-Wno-error' " <<
+          "--with-http_ssl_module " <<
+          "--with-http_spdy_module " <<
+          "--with-http_gzip_static_module " <<
+          "--with-http_stub_status_module " <<
+          "--with-http_addition_module " <<
+          "--add-module=#{passenger_code_dir}/ext/nginx"
+        
+        # We want to link statically to OpenSSL and PCRE.
+        sh "sed -i 's|-lcrypto|/usr/local/override/lib/libcrypto.a|g' objs/Makefile"
+        sh "sed -i 's|-lssl|/usr/local/override/lib/libssl.a|g' objs/Makefile"
+        sh "sed -i 's|-lpcre|/usr/lib/libpcre.a|g' objs/Makefile"
+        
+        sh "make"
+        sh "strip --strip-all objs/nginx"
+      end
+    end
+  end
+
   def build_tarballs
     commit_dir = "#{@options[:output_dir]}/by_commit/#{@commit}"
     date_dir   = "#{@options[:output_dir]}/by_date/#{Date.today}"
@@ -188,6 +239,9 @@ private
       maketar "#{commit_dir}/apache-#{version}-#{binary_compat_id}.tar.gz",
         ["mod_passenger.so"], "buildout/apache-#{version}"
     end
+
+    maketar "#{commit_dir}/#{nginx_basename}-#{binary_compat_id}.tar.gz",
+      ["nginx"], "buildout/#{nginx_basename}/objs"
 
     log "Setting date symlink"
     mkdir_p "#{@options[:output_dir]}/by_date", :verbose => true
@@ -223,6 +277,22 @@ private
     args << { :chdir => chdir } if chdir
     sh(*args)
     @output_files << filename
+  end
+
+  def nginx_url
+    "http://nginx.org/download/#{nginx_basename}.tar.gz"
+  end
+
+  def nginx_tarball
+    "#{@options[:repo_dir]}/#{nginx_basename}.tar.gz"
+  end
+
+  def nginx_basename
+    "nginx-#{@preferred_nginx_version}"
+  end
+
+  def passenger_code_dir
+    "#{@options[:repo_dir]}/main"
   end
 
   def sh(command, *args)

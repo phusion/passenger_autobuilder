@@ -1,13 +1,27 @@
 #!/bin/bash
 set -ex
+
 git_url="$1"
 platform="$2"
 name="$3"
 result_file="$4"
+
 source /srv/passenger_autobuilder/app/pbuilder-environment
 export CCACHE_DIR="/srv/passenger_autobuilder/ccache/psg_autobuilder_chroot/$platform"
+
 repo_dir="/srv/passenger_autobuilder/repos/$name"
 mkdir -p "$CCACHE_DIR"
+
+gpg --import /srv/passenger_autobuilder/app/*.key
+gpg --import-ownertrust <<EOF
+# List of assigned trustvalues, created Mon 01 Jul 2013 07:19:06 AM CEST
+# (Use "gpg --import-ownertrust" to restore them)
+573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62:6:
+A09CD539B8BB8CBE96E82BDFABD4D3B3F5806B4D:6:
+4C2C85E705DC730833990C38A9376139A524C53E:6:
+B0F4253373F8F6F510D42178520A9993A1C052F8:6:
+EOF
+
 exec ~/.rvm/bin/rvm-exec ruby-2.0.0 ruby /srv/passenger_autobuilder/app/autobuild-standalone \
 	--git-url "$git_url" \
 	--repo-dir "$repo_dir" \
