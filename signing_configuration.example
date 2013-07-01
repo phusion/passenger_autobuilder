@@ -1,13 +1,28 @@
-# This is the configuration file that governs PGP signing of the build results.
-# Signing operations are initiated by the 'psg_autobuilder_run' user. You
-# must import your key into that user's GPG keyring, and specify its details in
-# this file.
-#
-# After closing this editor, the installer will make this file accessible only
-# to the 'psg_autobuilder_run' user.
+## This is the configuration file that governs PGP signing of the build results.
+## Signing operations are initiated by the 'psg_autobuilder_run' user, and can be done
+## in two ways:
+## 1. By running the 'gpg' command locally.
+## 2. By forwarding the data via SSH to a remote host, which performs the signing.
+## The first approach is the easiest, while the latter approach is more secure.
+##
+## More information is documented below.
+##
+## After closing this editor, the installer will make this file accessible only
+## to the 'psg_autobuilder_run' user.
 
-# Specify the ID or email of your signing key here.
+## Which method do you want to use?
+SIGNING_METHOD=local
+# SIGNING_METHOD=remote
+
+##### Local signing options #####
+
+# Specify the ID or email of your signing key here. You must import your key
+# into psg_autobuilder_run's GPG keyring.
 SIGNING_KEY=""
 
 # Specify signing key password here.
 SIGNING_KEY_PASSWORD=""
+
+##### Remote signing options #####
+
+SIGNING_SSH_COMMAND="ssh -C autogpg@remotehost /usr/bin/signing-command"

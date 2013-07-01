@@ -16,8 +16,16 @@ function sign()
 	for F in "$@"; do
 		status "Signing $F"
 		rm -f "$F.asc"
-		gpg --batch --armor --local-user "$SIGNING_KEY" --detach-sign \
-			--passphrase-fd 3 "$F" 3<<<"$SIGNING_KEY_PASSWORD"
+		if [[ "$SIGNING_METHOD" = "local" ]]; then
+			gpg --batch --armor --local-user "$SIGNING_KEY" --detach-sign \
+				--passphrase-fd 3 "$F" 3<<<"$SIGNING_KEY_PASSWORD"
+		elif [[ "$SIGNING_METHOD" = "remote" ]]; then
+			signature=`$SIGNING_SSH_COMMAND < "$F"`
+			echo "$signature" > "$F.asc"
+		else
+			echo "Invalid signing method $SIGNING_METHOD. Please check your signing_configuration."
+			exit 1
+		fi
 	done
 }
 
