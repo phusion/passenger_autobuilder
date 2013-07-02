@@ -193,7 +193,7 @@ private
     sh "~/.rvm/bin/rvm-exec ruby-2.0.0 rake nginx"
 
     APACHE_VERSIONS.each do |version|
-      sh "rm -rf build/cache"
+      sh "rm -rf buildout/cache"
       sh "~/.rvm/bin/rvm-exec ruby-2.0.0 rake apache2 " +
         "APACHE2_OUTPUT_DIR=buildout/apache-#{version} " +
         "APXS2=/usr/local/apache-#{version}/bin/apxs " +
