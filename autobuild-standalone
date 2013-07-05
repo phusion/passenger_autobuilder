@@ -230,6 +230,7 @@ private
           "--with-http_gzip_static_module " <<
           "--with-http_stub_status_module " <<
           "--with-http_addition_module " <<
+          "--with-http_geoip_module " <<
           "--add-module=#{passenger_code_dir}/ext/nginx"
         
         # We want to link statically to OpenSSL and PCRE.

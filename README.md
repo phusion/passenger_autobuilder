@@ -17,6 +17,7 @@ Binaries for Nginx are also generated. The Nginx version that will be compiled i
  * `http_uwsgi_module`
  * `http_status_stub_module`
  * `http_addition_module`
+ * `http_geoip_module`
 
 The Nginx binary is built with prefix `/tmp` which will make it store log files, proxy_module buffer files, etc in `/tmp` by default. Such a prefix has the useful property of working on almost any system, but this prefix should not be used in production because of potential security issues. To solve this, you must there run the Nginx binary with the `-p` option to force it to use a different prefix (e.g. `-p /opt/local/nginx`).
 
