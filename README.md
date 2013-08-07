@@ -56,7 +56,7 @@ To build binaries for a tag (a release), add the `--tag=...` option, like this:
 ## Updating passenger_autobuilder itself
 
     cd /srv/passenger_autobuilder/app
-    sudo -u passenger_autobuilder git pull
+    sudo -u psg_autobuilder git pull
     sudo ./setup-system
 
 Sometimes the images have changed drastically, and need to be rebuilt. In that case, also run:
