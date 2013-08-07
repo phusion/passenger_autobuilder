@@ -46,7 +46,7 @@ function install_apache()
 	local download_apr="$4"
 	if [[ ! -e /usr/local/apache-$compat_version ]]; then
 		pushd /tmp
-		wget http://apache.mirrors.hoobly.com//httpd/httpd-$version.tar.bz2
+		wget http://archive.apache.org/dist/httpd/httpd-$version.tar.bz2
 		tar xjvf httpd-$version.tar.bz2
 		rm httpd-$version.tar.bz2
 		cd httpd-$version
@@ -169,7 +169,7 @@ fi
 
 if is_step 5; then
 	# Compile Apaches.
-	install_apache 2.0.64 2.0
-	install_apache 2.2.24 2.2 --with-included-apr
-	install_apache 2.4.4 2.4 --with-included-apr --download-apr
+	install_apache 2.0.65 2.0
+	install_apache 2.2.25 2.2 --with-included-apr
+	install_apache 2.4.6 2.4 --with-included-apr --download-apr
 fi
