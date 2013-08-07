@@ -52,3 +52,40 @@ Build output will be stored in `/srv/passenger_autobuilder/output/<NAME>`. For e
 To build binaries for a tag (a release), add the `--tag=...` option, like this:
 
     ./autobuild-with-pbuilder https://github.com/FooBarWidget/passenger.git passenger --tag=release-4.0.6
+
+## Updating passenger_autobuilder itself
+
+    cd /srv/passenger_autobuilder/app
+    sudo -u passenger_autobuilder git pull
+    sudo ./setup-system
+
+Sometimes the images have changed drastically, and need to be rebuilt. In that case, also run:
+
+    sudo rm -rf ../images
+    sudo ./setup-system
+    sudo ./setup-images
+
+## Security
+
+passenger_autobuilder uses multiple user accounts to ensure security. The following users exist, and their roles are as follows:
+
+ * `psg_autobuilder` is the owner of the passenger autobuilder source files (i.e. the files in the `passenger_autobuilder` git repository) and has read-write access to these files. This user is only used for updating passenger autobuilder itself, not for anything else.
+ * `psg_autobuilder_run` is the user that invokes `./autobuild-with-pbuilder`. Internally, `./autobuild-with-pbuilder` invokes pbuilder to run the actual build process. After the build process is finished, it signs the build products.
+
+   The `psg_autobuilder_run` user has the following rights:
+
+    * Read-only access to the passenger autobuilder source files.
+    * Read-write access to the output directory in which built binaries are stored, so that it can sign files.
+    * Passwordless sudo access to run a specific form of the `pbuilder` command, in order to start the build process. For details, see sudoers.conf. The reason why this is necessary is because pbuilder calls chroot(), which is only possible with root privileges.
+    * Read-write access to a directory in which it stores a summary of the build results.
+
+ * `psg_autobuilder_chroot` is the user that runs inside the pbuilder chroot jail to build binaries. This user has the following rights:
+
+    * Read-only access to the passenger autobuilder source files.
+    * Read-write access to the output directory in which built binaries are stored.
+    * Read-write access to the ccache directory.
+    * Read-write access to a directory in which it stores a summary of the build results.
+
+The most dangerous part of the setup is probably the part where `./autobuilder-with-pbuilder` calls sudo. By ensuring that `psg_autobuilder_run` and `psg_autobuilder_chroot` only have read-only access to the passenger autobuilder source files, and by locking down the sudo policy, we prevent the system from being able to gain arbitrary root privileges.
+
+The PGP signing key can be secured by means of a signing server. See signing_configuration.example for more information.
