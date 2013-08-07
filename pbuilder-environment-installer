@@ -127,10 +127,9 @@ if is_step 3; then
 	# Install Ruby 1.9.3, 2.0.0 and Ruby tools.
 	run_as_psg_autobuilder_chroot 'rvm install 1.9.3'
 	run_as_psg_autobuilder_chroot 'rvm install 2.0.0'
-	run_as_psg_autobuilder_chroot 'rvm --default 1.9.3'
-	run_as_psg_autobuilder_chroot 'rvm --default 1.9.3'
+	run_as_psg_autobuilder_chroot 'rvm --default 2.0.0'
 	run_as_psg_autobuilder_chroot 'rvm cleanup all'
-	run_as_psg_autobuilder_chroot 'gem install bluecloth --no-rdoc --no-ri'
+	run_as_psg_autobuilder_chroot 'gem install drake bluecloth --no-rdoc --no-ri'
 fi
 
 if is_step 4; then
