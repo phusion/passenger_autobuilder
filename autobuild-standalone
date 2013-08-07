@@ -190,11 +190,11 @@ private
     sh "~/.rvm/bin/rvm-exec ruby-1.9.3 rake native_support"
     sh "~/.rvm/bin/rvm-exec ruby-2.0.0 rake native_support"
 
-    sh "~/.rvm/bin/rvm-exec ruby-2.0.0 drake -j4 nginx"
+    sh "~/.rvm/bin/rvm-exec ruby-2.0.0 #{drake} nginx"
 
     APACHE_VERSIONS.each do |version|
       sh "rm -rf buildout/cache"
-      sh "~/.rvm/bin/rvm-exec ruby-2.0.0 drake -j4 apache2 " +
+      sh "~/.rvm/bin/rvm-exec ruby-2.0.0 #{drake} apache2 " +
         "APACHE2_OUTPUT_DIR=buildout/apache-#{version} " +
         "APXS2=/usr/local/apache-#{version}/bin/apxs " +
         "PATH=/usr/local/apache-#{version}/bin:#{ENV['PATH']}"
@@ -391,6 +391,10 @@ private
     else
       puts "# #{message}"
     end
+  end
+
+  def drake
+    ENV['DRAKE'] || "drake"
   end
 end
 
