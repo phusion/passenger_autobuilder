@@ -1,4 +1,5 @@
 require 'json'
+require 'yaml'
 
 def is_master_commit_push?(payload)
   payload["ref"] == "refs/heads/master"
