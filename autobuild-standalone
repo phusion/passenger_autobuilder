@@ -361,7 +361,7 @@ private
   def make_output_subdir(dir)
     infer_nonexistant_subdirs(dir).each do |subdir|
       log "mkdir #{subdir}"
-      Dir.mkdir(subdir, 0771)
+      Dir.mkdir(subdir, 0775)
       if !File.setgid?(subdir)
         sh "chmod", "g+s", subdir
       end
