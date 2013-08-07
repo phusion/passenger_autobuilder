@@ -10,7 +10,7 @@ def is_tag_push?(payload)
 end
 
 def extract_tag_name(payload)
-  payload["ref"].sub(/^ref\/tags\//, '')
+  payload["ref"].sub(/^refs\/tags\//, '')
 end
 
 def find_project(payload)
