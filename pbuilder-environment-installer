@@ -106,7 +106,7 @@ if is_step 1; then
 		apt_get_install git
 	fi
 	apt_get_install build-essential libreadline6-dev zlib1g-dev libssl-dev libyaml-dev libsqlite3-dev
-	apt_get_install ccache wget curl less ssh sudo mizuho source-highlight libpcre3-dev
+	apt_get_install ccache wget curl less ssh sudo mizuho source-highlight libpcre3-dev libgeoip-dev
 fi
 
 if is_step 2; then
