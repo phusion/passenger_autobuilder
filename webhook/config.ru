@@ -1,6 +1,6 @@
 require 'json'
 
-def is_commit_push?(payload)
+def is_master_commit_push?(payload)
   payload["ref"] == "refs/heads/master"
 end
 
@@ -19,10 +19,12 @@ def find_project(payload)
 end
 
 def schedule_build(project, tag_name = nil)
-  command = "/tools/silence-unless-failed ./autobuild-with-pbuilder #{project['git_url']} #{project['name']}"
+  command = "/tools/silence-unless-failed chpst -l /tmp/passenger_autobuilder.lock " +
+    "./autobuild-with-pbuilder #{project['git_url']} #{project['name']}"
   if tag_name
     command << " --tag=#{tag_name}"
   end
+  puts "Executing command: #{command}"
   IO.popen("at now", "w") do |f|
     f.puts("cd /srv/passenger_autobuilder/app")
     f.puts(command)
