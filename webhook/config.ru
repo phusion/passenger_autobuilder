@@ -40,7 +40,7 @@ def process_request(request, payload)
     else
       false
     end
-  elsif is_tag_push?(payload) && (tag_name = extract_tag_name)
+  elsif is_tag_push?(payload) && (tag_name = extract_tag_name(payload))
     if project = find_project(payload)
       schedule_build(project, tag_name)
     else
