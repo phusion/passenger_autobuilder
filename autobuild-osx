@@ -1,0 +1,33 @@
+#!/bin/bash
+set -e
+source osx-environment
+export CC="$CC -I$OSX_LIBDIR/include -L$OSX_LIBDIR/lib"
+export CXX="$CXX -I$OSX_LIBDIR/include -L$OSX_LIBDIR/lib"
+export PATH="$OSX_LIBDIR/bin:$PATH"
+set -x
+
+GIT_URL=https://github.com/FooBarWidget/passenger.git
+NAME=passenger
+
+gpg --import *.key
+gpg --import-ownertrust <<EOF
+# List of assigned trustvalues, created Mon 01 Jul 2013 07:19:06 AM CEST
+# (Use "gpg --import-ownertrust" to restore them)
+573BFD6B3D8FBC641079A6ABABF5BD827BD9BF62:6:
+A09CD539B8BB8CBE96E82BDFABD4D3B3F5806B4D:6:
+4C2C85E705DC730833990C38A9376139A524C53E:6:
+B0F4253373F8F6F510D42178520A9993A1C052F8:6:
+EOF
+
+./autobuild-standalone --git-url "$GIT_URL" \
+	--repo-dir $OSX_BASE_DIR/repo \
+	--output-dir $OSX_BASE_DIR/output/$NAME \
+	--without-ngx_geoip_module \
+	--without-ruby-extensions \
+	--without-apache-modules \
+	--static-libs-prefix $OSX_LIBDIR \
+	--result-file $BUILDDIR/result.txt
+
+for F in `cat $BUILDDIR/result.txt`; do
+	gpg --batch --armor --local-user auto-software-signing@phusion.nl --detach-sign "$F"
+done

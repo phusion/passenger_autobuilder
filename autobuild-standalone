@@ -46,7 +46,11 @@ private
     @options = {
       :repo_dir => File.expand_path("repo"),
       :output_dir => File.expand_path("output"),
-      :work_tag => "today"
+      :work_tag => "today",
+      :with_ngx_geoip_module => true,
+      :with_ruby_extensions => true,
+      :with_apache_modules => true,
+      :static_libs_prefix => "/usr/local/override"
     }
     parser = OptionParser.new do |opts|
       nl = "\n#{' ' * 37}"
@@ -72,6 +76,18 @@ private
       end
       opts.on("--result-file FILE", String, "Save output filenames to this file") do |val|
         @options[:result_file] = val
+      end
+      opts.on("--without-ngx_geoip_module", "Do not build Nginx geoip_module") do
+        @options[:with_ngx_geoip_module] = false
+      end
+      opts.on("--without-ruby-extensions", "Do not build Ruby extensions") do
+        @options[:with_ruby_extensions] = false
+      end
+      opts.on("--without-apache-modules", "Do not build Apache modules") do
+        @options[:with_apache_modules] = false
+      end
+      opts.on("--static-libs-prefix PREFIX", String, "Prefix in which static libraries like libssl.a are located") do |val|
+        @options[:static_libs_prefix] = val
       end
       opts.on("--dry-run", "Do everything exception compiling") do
         @options[:dry_run] = true
@@ -185,19 +201,24 @@ private
 
   def recompile_passenger
     return if @options[:dry_run]
-    sh "~/.rvm/bin/rvm-exec ruby-1.8.7 rake native_support"
-    sh "~/.rvm/bin/rvm-exec ruby-1.9.2 rake native_support"
-    sh "~/.rvm/bin/rvm-exec ruby-1.9.3 rake native_support"
-    sh "~/.rvm/bin/rvm-exec ruby-2.0.0 rake native_support"
+
+    if @options[:with_ruby_extensions]
+      sh "~/.rvm/bin/rvm-exec ruby-1.8.7 rake native_support"
+      sh "~/.rvm/bin/rvm-exec ruby-1.9.2 rake native_support"
+      sh "~/.rvm/bin/rvm-exec ruby-1.9.3 rake native_support"
+      sh "~/.rvm/bin/rvm-exec ruby-2.0.0 rake native_support"
+    end
 
     sh "~/.rvm/bin/rvm-exec ruby-2.0.0 #{drake} nginx"
 
-    APACHE_VERSIONS.each do |version|
-      sh "rm -rf buildout/cache"
-      sh "~/.rvm/bin/rvm-exec ruby-2.0.0 #{drake} apache2 " +
-        "APACHE2_OUTPUT_DIR=buildout/apache-#{version} " +
-        "APXS2=/usr/local/apache-#{version}/bin/apxs " +
-        "PATH=/usr/local/apache-#{version}/bin:#{ENV['PATH']}"
+    if @options[:with_apache_modules]
+      APACHE_VERSIONS.each do |version|
+        sh "rm -rf buildout/cache"
+        sh "~/.rvm/bin/rvm-exec ruby-2.0.0 #{drake} apache2 " +
+          "APACHE2_OUTPUT_DIR=buildout/apache-#{version} " +
+          "APXS2=/usr/local/apache-#{version}/bin/apxs " +
+          "PATH=/usr/local/apache-#{version}/bin:#{ENV['PATH']}"
+      end
     end
 
     # The .o files were only used for linking agent executables.
@@ -222,24 +243,32 @@ private
     Dir.chdir("buildout") do
       sh "tar", "xzvf", nginx_tarball
       Dir.chdir(nginx_basename) do
-        sh env, "./configure " <<
+        command = "./configure " <<
           "--prefix=/tmp " <<
           "--with-cc-opt='-Wno-error' " <<
           "--with-http_ssl_module " <<
           "--with-http_spdy_module " <<
           "--with-http_gzip_static_module " <<
           "--with-http_stub_status_module " <<
-          "--with-http_addition_module " <<
-          "--with-http_geoip_module " <<
-          "--add-module=#{passenger_code_dir}/ext/nginx"
-        
+          "--with-http_addition_module "
+        if @options[:with_ngx_geoip_module]
+          command << "--with-http_geoip_module "
+        end
+        command << "--add-module=#{passenger_code_dir}/ext/nginx"
+        sh env, command
+
         # We want to link statically to OpenSSL and PCRE.
-        sh "sed -i 's|-lcrypto|/usr/local/override/lib/libcrypto.a|g' objs/Makefile"
-        sh "sed -i 's|-lssl|/usr/local/override/lib/libssl.a|g' objs/Makefile"
-        sh "sed -i 's|-lpcre|/usr/lib/libpcre.a|g' objs/Makefile"
+        static_libs_prefix = @options[:static_libs_prefix]
+        inline_sed "s|-lcrypto|#{static_libs_prefix}/lib/libcrypto.a|g", "objs/Makefile"
+        inline_sed "s|-lssl|#{static_libs_prefix}/lib/libssl.a|g", "objs/Makefile"
+        if RUBY_PLATFORM =~ /darwin/
+          inline_sed "s|-lpcre|#{static_libs_prefix}/lib/libpcre.a|g", "objs/Makefile"
+        else
+          inline_sed "s|-lpcre|/usr/lib/libpcre.a|g", "objs/Makefile"
+        end
         
         sh "make"
-        sh "strip --strip-all objs/nginx"
+        sh "#{strip_all} objs/nginx"
       end
     end
   end
@@ -257,16 +286,21 @@ private
     if @options[:dry_run]
       log "--dry-run given, not creating tarballs"
     else
-      Dir["buildout/ruby/*"].each do |subdir|
-        name = File.basename(subdir)
-        maketar "#{output_dir}/rubyext-#{name}.tar.gz", ["."], "buildout/ruby/#{name}"
+      if @options[:with_ruby_extensions]
+        Dir["buildout/ruby/*"].each do |subdir|
+          name = File.basename(subdir)
+          maketar "#{output_dir}/rubyext-#{name}.tar.gz", ["."], "buildout/ruby/#{name}"
+        end
       end
+
       maketar "#{output_dir}/support-#{binary_compat_id}.tar.gz",
         ["agents", "common"], "buildout"
 
-      APACHE_VERSIONS.each do |version|
-        maketar "#{output_dir}/apache-#{version}-#{binary_compat_id}.tar.gz",
-          ["mod_passenger.so"], "buildout/apache-#{version}"
+      if @options[:with_apache_modules]
+        APACHE_VERSIONS.each do |version|
+          maketar "#{output_dir}/apache-#{version}-#{binary_compat_id}.tar.gz",
+            ["mod_passenger.so"], "buildout/apache-#{version}"
+        end
       end
 
       maketar "#{output_dir}/#{nginx_basename}-#{binary_compat_id}.tar.gz",
@@ -390,6 +424,22 @@ private
       puts "\e[1m# #{message}\e[0m"
     else
       puts "# #{message}"
+    end
+  end
+
+  def inline_sed(command, filename)
+    if RUBY_PLATFORM =~ /darwin/
+      sh "sed", "-i", "", command, filename
+    else
+      sh "sed", "-i", command, filename
+    end
+  end
+
+  def strip_all
+    if RUBY_PLATFORM =~ /darwin/
+      "strip"
+    else
+      "strip --strip-all"
     end
   end
 
