@@ -22,14 +22,31 @@ B0F4253373F8F6F510D42178520A9993A1C052F8:6:
 EOF
 
 ./autobuild-standalone --git-url "$GIT_URL" \
-	--repo-dir "$OSX_BASE_DIR/repo" \
+	--repo-dir "$OSX_BASE_DIR/repo/$NAME" \
 	--output-dir "$OSX_BASE_DIR/output/$NAME" \
 	--without-ngx_geoip_module \
 	--without-ruby-extensions \
 	--without-apache-modules \
 	--static-libs-prefix "$OSX_LIBDIR" \
-	--result-file "$BUILDDIR/result.txt"
+	--result-file "$BUILDDIR/result.txt" \
+	--metadata-result-file "$BUILDDIR/metadata.txt"
 
+source "$BUILDDIR/metadata.txt"
+all_files=""
 for F in `cat "$BUILDDIR/result.txt"`; do
 	gpg --armor --local-user auto-software-signing@phusion.nl --detach-sign "$F"
+	basename=`basename "$F"`
+	all_files="$all_files $basename $basename.asc"
 done
+
+remote_commit_dir="$FILE_SERVER_OUTPUT_DIR/$NAME/by_commit/$GIT_COMMIT"
+(
+	cd "$OUTPUT_DIR"
+	tar -c $all_files
+) | echo ssh "$FILE_SERVER" \
+	"mkdir -p $remote_commit_dir.tmp2 &&
+	cd $remote_commit_dir.tmp2 &&
+	tar xvf - &&
+	cd .. &&
+	mv $remote_commit_dir.tmp2/* $remote_commit_dir/ &&
+	rmdir $remote_commit_dir.tmp2"

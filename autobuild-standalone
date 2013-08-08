@@ -77,6 +77,9 @@ private
       opts.on("--result-file FILE", String, "Save output filenames to this file") do |val|
         @options[:result_file] = val
       end
+      opts.on("--metadata-result-file FILE", String, "Save git commit and other info to this file") do |val|
+        @options[:metadata_result_file] = val
+      end
       opts.on("--without-ngx_geoip_module", "Do not build Nginx geoip_module") do
         @options[:with_ngx_geoip_module] = false
       end
@@ -284,8 +287,10 @@ private
 
   def save_build_output
     build_tarballs(output_commit_subdir)
+    create_binary_compatibility_symlinks
     sh "touch", work_tag_filename
     create_result_file
+    create_metadata_result_file(output_commit_subdir)
   end
 
   def build_tarballs(output_dir)
@@ -314,6 +319,26 @@ private
 
       maketar "#{output_dir}/#{nginx_basename}-#{binary_compat_id}.tar.gz",
         ["nginx"], "buildout/#{nginx_basename}/objs"
+    end
+  end
+
+  def create_binary_compatibility_symlinks
+    if compatible_targets = ENV['MACOSX_COMPATIBLE_DEPLOYMENT_TARGETS']
+      compatible_targets = compatible_targets.split
+      results = []
+
+      @output_files.each do |filename|
+        compatible_targets.each do |target|
+          new_filename = filename.sub(binary_compat_id, "x86_64-macosx-#{target}")
+          if new_filename != filename
+            log "Creating symlink #{new_filename}"
+            File.symlink(File.basename(filename), new_filename)
+            results << new_filename
+          end
+        end
+      end
+
+      @output_files.concat(results)
     end
   end
 
@@ -351,6 +376,18 @@ private
     end
   end
 
+  def create_metadata_result_file(output_dir)
+    if @options[:metadata_result_file]
+      log "Writing metadata to #{@options[:metadata_result_file]}"
+      File.open(@options[:metadata_result_file], "w") do |f|
+        f.puts "GIT_COMMIT=#{@commit}"
+        f.puts "GIT_SHA=#{@sha}"
+        f.puts "GIT_SUBJECT=#{@subject.inspect}"
+        f.puts "OUTPUT_DIR=#{output_dir.inspect}"
+      end
+    end
+  end
+
   def remove_build_output
     log "An error occurred. Rolling back..."
     @output_files.each do |filename|
@@ -360,7 +397,12 @@ private
   end
 
   def binary_compat_id
-    @binary_compat_id ||= `./bin/passenger-config --cxx-compat-id`.strip
+    @binary_compat_id ||=
+      if target = ENV['MACOSX_DEPLOYMENT_TARGET']
+        "x86_64-macosx-#{target}"
+      else
+        `./bin/passenger-config --cxx-compat-id`.strip
+      end
   end
 
   def maketar(filename, input, chdir = nil)
