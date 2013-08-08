@@ -53,8 +53,10 @@ end
 
 app = lambda do |env|
   request = Rack::Request.new(env)
-  payload = JSON.parse(request.params["payload"])
-  if process_request(request, payload)
+  if !(payload = request.params["payload"])
+    payload = env['rack.input'].read
+  end
+  if process_request(request, JSON.parse(payload))
     [200, { "Content-Type" => "text/plain" }, ["ok"]]
   else
     [500, { "Content-Type" => "text/plain" }, ["Internal server error"]]
