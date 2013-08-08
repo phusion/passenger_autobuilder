@@ -1,0 +1,8 @@
+#!/usr/bin/env ruby
+# Like mkdir -p, but to be run by the psg_autobuilder_chroot user for
+# creating a subdirectory inside the output directory. This script
+# sets the proper permissions on all created directories.
+
+require_relative './library'
+include RubyLibrary
+make_output_subdir(ARGV[0])
