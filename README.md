@@ -128,8 +128,10 @@ The Nginx binary is built with prefix `/tmp` which will make it store log files,
 
 ## Requirements
 
- * Xcode with the 10.7 SDK.
- * Ruby >= 1.9.
+ * All Phusion Passenger dependencies.
+ * The OS X 10.7 SDK.
+ * RVM installed in single-user mode.
+ * Ruby 2.0.0 installed via RVM.
 
 ## Getting started
 
