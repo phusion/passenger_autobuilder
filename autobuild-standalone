@@ -410,9 +410,10 @@ private
   end
 
   def maketar(filename, input, chdir = nil)
-    args = ["tar", "-czf", filename, *input]
+    args = ["tar", "-czf", "#{filename}.tmp", *input]
     args << { :chdir => chdir } if chdir
     sh(*args)
+    sh("mv", "#{filename}.tmp", filename)
     @output_files << filename
   end
 
