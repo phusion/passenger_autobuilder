@@ -1,5 +1,8 @@
 require 'json'
 require 'yaml'
+require 'logger'
+
+LOGGER = Logger.new(STDOUT)
 
 def is_master_commit_push?(payload)
   payload["ref"] == "refs/heads/master"
@@ -25,7 +28,7 @@ def schedule_build(project, tag_name = nil)
   if tag_name
     command << " --tag=#{tag_name}"
   end
-  puts "Executing command: #{command}"
+  log "Executing command: #{command}"
   IO.popen("at now", "w") do |f|
     f.puts("cd /srv/passenger_autobuilder/app")
     f.puts(command)
@@ -38,17 +41,24 @@ def process_request(request, payload)
     if project = find_project(payload)
       schedule_build(project)
     else
+      log "Cannot find project"
       false
     end
   elsif is_tag_push?(payload) && (tag_name = extract_tag_name(payload))
     if project = find_project(payload)
       schedule_build(project, tag_name)
     else
+      log "Cannot find project"
       false
     end
   else
+    log "Unrecognized request"
     false
   end
+end
+
+def log(message)
+  LOGGER.info "[passenger_autobuilder webhook] #{message}"
 end
 
 app = lambda do |env|
@@ -57,10 +67,8 @@ app = lambda do |env|
     payload = env['rack.input'].read
   end
   if process_request(request, JSON.parse(payload))
-    puts "passenger_autobuilder webhook: job queued"
     [200, { "Content-Type" => "text/plain" }, ["ok"]]
   else
-    puts "passenger_autobuilder webhook: error"
     [500, { "Content-Type" => "text/plain" }, ["Internal server error"]]
   end
 end
