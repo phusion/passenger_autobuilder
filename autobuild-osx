@@ -1,6 +1,7 @@
 #!/bin/bash
 set -e
 source osx-environment
+export CCACHE_DIR="$OSX_BASE_DIR/ccache/autobuild"
 export CC="$CC -I$OSX_LIBDIR/include -L$OSX_LIBDIR/lib"
 export CXX="$CXX -I$OSX_LIBDIR/include -L$OSX_LIBDIR/lib"
 export PATH="$OSX_LIBDIR/bin:$PATH"
@@ -9,6 +10,7 @@ set -x
 GIT_URL=https://github.com/FooBarWidget/passenger.git
 NAME=passenger
 
+mkdir -p "$CCACHE_DIR"
 gpg --import *.key
 gpg --import-ownertrust <<EOF
 # List of assigned trustvalues, created Mon 01 Jul 2013 07:19:06 AM CEST
@@ -20,14 +22,14 @@ B0F4253373F8F6F510D42178520A9993A1C052F8:6:
 EOF
 
 ./autobuild-standalone --git-url "$GIT_URL" \
-	--repo-dir $OSX_BASE_DIR/repo \
-	--output-dir $OSX_BASE_DIR/output/$NAME \
+	--repo-dir "$OSX_BASE_DIR/repo" \
+	--output-dir "$OSX_BASE_DIR/output/$NAME" \
 	--without-ngx_geoip_module \
 	--without-ruby-extensions \
 	--without-apache-modules \
-	--static-libs-prefix $OSX_LIBDIR \
-	--result-file $BUILDDIR/result.txt
+	--static-libs-prefix "$OSX_LIBDIR" \
+	--result-file "$BUILDDIR/result.txt"
 
-for F in `cat $BUILDDIR/result.txt`; do
-	gpg --batch --armor --local-user auto-software-signing@phusion.nl --detach-sign "$F"
+for F in `cat "$BUILDDIR/result.txt"`; do
+	gpg --armor --local-user auto-software-signing@phusion.nl --detach-sign "$F"
 done

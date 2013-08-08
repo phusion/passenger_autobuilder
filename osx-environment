@@ -1,5 +1,4 @@
 OSX_BASE_DIR=`pwd`/osx
-export CCACHE_DIR=$OSX_BASE_DIR/ccache
 export CCACHE_COMPRESS_LEVEL=3
 export CC="ccache clang"
 export CXX="ccache clang++"

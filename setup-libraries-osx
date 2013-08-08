@@ -3,9 +3,10 @@ set -e
 source osx-environment
 
 set -x
-mkdir -p $CCACHE_DIR $OSX_LIBDIR $BUILDDIR
+export CCACHE_DIR="$OSX_BASE_DIR/ccache/libs"
+mkdir -p "$CCACHE_DIR" "$OSX_LIBDIR" "$BUILDDIR"
 rm -rf "$BUILDDIR"/*
-cd $BUILDDIR
+cd "$BUILDDIR"
 
 if ! [[ -e ~/.rvm ]]; then
 	echo "*** ERROR: You must install RVM in single user mode"
@@ -13,29 +14,29 @@ if ! [[ -e ~/.rvm ]]; then
 fi
 
 # Compile a static OpenSSL library.
-if [[ ! -e $OSX_LIBDIR/bin/openssl ]]; then
+if [[ ! -e "$OSX_LIBDIR/bin/openssl" ]]; then
 	wget http://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
 	tar xzvf openssl-$OPENSSL_VERSION.tar.gz
 	rm openssl-$OPENSSL_VERSION.tar.gz
 	cd openssl-$OPENSSL_VERSION
-	./Configure darwin64-x86_64-cc --prefix=$OSX_LIBDIR --openssldir=$OSX_LIBDIR/openssl \
+	./Configure darwin64-x86_64-cc --prefix="$OSX_LIBDIR" --openssldir="$OSX_LIBDIR/openssl" \
 		threads zlib no-shared no-sse2
 	make
 	make install_sw
-	strip $OSX_LIBDIR/bin/openssl
-	strip -S $OSX_LIBDIR/lib/libcrypto.a
-	strip -S $OSX_LIBDIR/lib/libssl.a
+	strip "$OSX_LIBDIR/bin/openssl"
+	strip -S "$OSX_LIBDIR/lib/libcrypto.a"
+	strip -S "$OSX_LIBDIR/lib/libssl.a"
 	cd ..
 	rm -rf openssl-$OPENSSL_VERSION
 fi
 
 # Compile a minimalist libcurl with almost no dependencies.
-if [[ ! -e $OSX_LIBDIR/bin/curl ]]; then
+if [[ ! -e "$OSX_LIBDIR/bin/curl" ]]; then
 	wget http://curl.haxx.se/download/curl-$CURL_VERSION.tar.bz2
 	tar xjvf curl-$CURL_VERSION.tar.bz2
 	rm curl-$CURL_VERSION.tar.bz2
 	cd curl-$CURL_VERSION
-	./configure --prefix=$OSX_LIBDIR --disable-shared --disable-manual --disable-ldap --disable-ldaps \
+	./configure --prefix="$OSX_LIBDIR" --disable-shared --disable-manual --disable-ldap --disable-ldaps \
 		--disable-rtsp --disable-dict --disable-ftp --disable-ftps --disable-gopher --disable-imap \
 		--disable-imaps --disable-pop3 --disable-pop3s --without-librtmp --disable-smtp --disable-smtps \
 		--disable-telnet --disable-tftp --without-libmetalink --without-libidn
@@ -46,12 +47,12 @@ if [[ ! -e $OSX_LIBDIR/bin/curl ]]; then
 fi
 
 # Compile a minimalist PCRE with almost no dependencies.
-if [[ ! -e $OSX_LIBDIR/bin/pcre-config ]]; then
+if [[ ! -e "$OSX_LIBDIR/bin/pcre-config" ]]; then
 	wget http://downloads.sourceforge.net/project/pcre/pcre/$PCRE_VERSION/pcre-$PCRE_VERSION.tar.gz
 	tar xjvf pcre-$PCRE_VERSION.tar.gz
 	rm pcre-$PCRE_VERSION.tar.gz
 	cd pcre-$PCRE_VERSION
-	./configure --prefix=$OSX_LIBDIR --disable-shared --disable-cpp --disable-pcregrep-jit
+	./configure --prefix="$OSX_LIBDIR" --disable-shared --disable-cpp --disable-pcregrep-jit
 	make -j4
 	make install-strip
 	cd ..
@@ -59,13 +60,13 @@ if [[ ! -e $OSX_LIBDIR/bin/pcre-config ]]; then
 fi
 
 # Compile a static zlib library.
-if [[ ! -e $OSX_LIBDIR/lib/libz.a ]]; then
+if [[ ! -e "$OSX_LIBDIR/lib/libz.a" ]]; then
 	wget http://downloads.sourceforge.net/project/libpng/zlib/$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz
 	tar xzvf zlib-$ZLIB_VERSION.tar.gz
 	cd zlib-$ZLIB_VERSION
-	./configure --prefix=$OSX_LIBDIR --static
+	./configure --prefix="$OSX_LIBDIR" --static
 	make install
-	strip -S $OSX_LIBDIR/lib/libz.a
+	strip -S "$OSX_LIBDIR/lib/libz.a"
 	cd ..
 	rm -rf zlib-$ZLIB_VERSION
 fi
