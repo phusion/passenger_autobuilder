@@ -57,8 +57,10 @@ app = lambda do |env|
     payload = env['rack.input'].read
   end
   if process_request(request, JSON.parse(payload))
+    puts "passenger_autobuilder webhook: job queued"
     [200, { "Content-Type" => "text/plain" }, ["ok"]]
   else
+    puts "passenger_autobuilder webhook: error"
     [500, { "Content-Type" => "text/plain" }, ["Internal server error"]]
   end
 end
