@@ -12,7 +12,14 @@ Because building binaries involves running build systems that may execute arbitr
 
 passenger_autobuilder must be run on a 64-bit Ubuntu system. It builds x86 and x86-64 binaries. All dependencies besides glibc are statically linked into the produced binaries. The latest glibc symbol version that the produced binaries utilize is `GLIBC_2.11`, which should make the binaries compatible with all Linux distributions starting from 2009. This includes Ubuntu >= 10.04, Debian >= 6 and Red Hat >= 6.
 
-Binaries for Nginx are also generated. The Nginx version that will be compiled is the version preferred by the Phusion Passenger codebase. It includes the following modules:
+passenger_autobuilder generates binaries for:
+
+ * The Phusion Passenger support files (e.g. the agent executables).
+ * Apache modules built against multiple versions of Apache: 2.0, 2.2, 2.4
+ * Phusion Passenger Ruby extensions built against multiple versions of Ruby: 1.8.7, 1.9.2, 1.9.3, 2.0.0
+ * Nginx.
+
+The Nginx version that will be compiled is the version preferred by the Phusion Passenger codebase. It includes the following modules:
 
  * `http_ssl_module`
  * `http_spdy_module`
@@ -99,6 +106,25 @@ The PGP signing key can be secured by means of a signing server. See signing_con
 ## OS X
 
 On OS X, passenger autobuilder provides a build environment for generating binaries compatible with OS X 10.7 (Lion) and beyond. Only x86_64 binaries are supported. Unlike the Linux version, the OS X version does not use multiple user accounts. OS X does not have convenient facilities to run things under multiple user accounts like other Unices do. Technically OS X can do this but its tooling is very very sucky, so we don't bother. The OS X version is designed to be run from an OS X desktop or laptop, since the availability of cheap OS X server is problematic, to say the least.
+
+passenger_autobuilder generates binaries for:
+
+ * The Phusion Passenger support files (e.g. the agent executables).
+ * Nginx.
+
+The Nginx version that will be compiled is the version preferred by the Phusion Passenger codebase. It includes the following modules:
+
+ * `http_ssl_module`
+ * `http_spdy_module`
+ * `http_gzip_static_module`
+ * `http_proxy_module`
+ * `http_fastcgi_module`
+ * `http_scgi_module`
+ * `http_uwsgi_module`
+ * `http_status_stub_module`
+ * `http_addition_module`
+
+The Nginx binary is built with prefix `/tmp` which will make it store log files, proxy_module buffer files, etc in `/tmp` by default. Such a prefix has the useful property of working on almost any system, but this prefix should not be used in production because of potential security issues. To solve this, you must there run the Nginx binary with the `-p` option to force it to use a different prefix (e.g. `-p /opt/local/nginx`).
 
 ## Requirements
 
