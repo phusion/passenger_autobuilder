@@ -6,7 +6,7 @@ The built binaries are signed with GPG and are stored on https://oss-binaries.ph
 
 ## Linux
 
-On Linux, passenger_autobuilder provides a build environment that is built with pbuilder. The build environment is based on Ubuntu 10.04 and is custom-built to be able to generate Linux binaries that can run on a wide range of Linux distributions.
+On Linux, passenger_autobuilder provides a build environment that is built with pbuilder. The build environment is based on Ubuntu 10.04 and is custom-built to be able to generate Linux binaries that can run on a wide range of Linux distributions. Why Ubuntu 10.04? [Read this comment.](http://www.reddit.com/r/ruby/comments/1jyazd/phusion_passenger_binary_building_automation/cbjiydc)
 
 Because building binaries involves running build systems that may execute arbitrary code, passenger_autobuilder utilizes multiple user accounts, plus the use of sudo, to protect against build systems wrecking havoc on the system. See the "Local security" section for more information.
 
