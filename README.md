@@ -105,7 +105,7 @@ The PGP signing key can be secured by means of a signing server. See signing_con
 
 ## OS X
 
-On OS X, passenger autobuilder provides a build environment for generating binaries compatible with OS X 10.7 (Lion) and beyond. Only x86_64 binaries are supported. Unlike the Linux version, the OS X version does not use multiple user accounts. OS X does not have convenient facilities to run things under multiple user accounts like other Unices do. Technically OS X can do this but its tooling is very very sucky, so we don't bother. The OS X version is designed to be run from an OS X desktop or laptop, since the availability of cheap OS X server is problematic, to say the least.
+On OS X, passenger autobuilder provides a build environment for generating binaries compatible with OS X 10.7 (Lion) and beyond. Only x86_64 binaries are supported. Unlike the Linux version, the OS X version does not use multiple user accounts. OS X does not have convenient facilities to run things under multiple user accounts like other Unices do. Technically OS X can do this but its tooling is very very sucky, so we don't bother. The OS X version is designed to be run from an OS X desktop or laptop, since the availability of cheap OS X servers is problematic, to say the least.
 
 passenger_autobuilder generates binaries for:
 
