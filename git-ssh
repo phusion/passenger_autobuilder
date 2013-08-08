@@ -1,0 +1,4 @@
+#!/bin/bash
+# An ssh wrapper, invoked by autobuild-standalone. Disables
+# strict host key checking because the pbuilder jail does not store state.
+exec ssh -o StrictHostKeyChecking=no "$@"

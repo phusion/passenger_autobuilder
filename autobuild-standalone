@@ -137,7 +137,6 @@ private
   end
 
   def fetch_latest_code
-    ENV['GIT_SSH'] = "ssh -o StrictHostKeyChecking=no"
     if File.exist?(passenger_code_dir)
       git_fetch_and_reset
     else

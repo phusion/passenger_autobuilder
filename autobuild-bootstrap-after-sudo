@@ -8,6 +8,7 @@ shift
 
 source /srv/passenger_autobuilder/app/pbuilder-environment
 export CCACHE_DIR="/srv/passenger_autobuilder/ccache/psg_autobuilder_chroot/$platform"
+export GIT_SSH="$PASSENGER_AUTOBUILDER_ROOT/git-ssh"
 
 umask u=rwx,g=rwx,o=rx
 repo_dir="/srv/passenger_autobuilder/repos/$name"
