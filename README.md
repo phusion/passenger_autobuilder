@@ -1,10 +1,16 @@
 # Passenger Binary Builder Automation System
 
-This repository contains scripts for automating the building of Linux binaries for [Phusion Passenger](https://www.phusionpassenger.com/). It provides a build environment that is built with pbuilder. The build environment is based on Ubuntu 10.04 and is custom-built to be able to generate Linux binaries that can run on a wide range of Linux distributions.
+This repository contains scripts for automating the building of Linux and OS X binaries for [Phusion Passenger](https://www.phusionpassenger.com/). The goal is for us (Phusion) to setup an automated build infrastructure so that every Phusion Passenger release comes with binaries that work for most users. These binaries are built immediately after we push a tag a Github, to minimize the release delay between source code and binaries. Once this infrastructure is in place, most users should never have to compile by themselves again, saving precious time and resources. If you are security minded, then you may want to run this infrastructure on your internal network instead of using our binaries.
 
-Because building binaries involves running build systems that may execute arbitrary code, passenger_autobuilder utilizes multiple user accounts, plus the use of sudo, to protect against build systems wrecking havoc on the system.
+The built binaries are signed with GPG and are stored on https://oss-binaries.phusionpassenger.com/. The key used for signing is "auto-software-signing@phusion.nl", key ID 561F9B9CAC40B2F7, fingerprint 1637 8A33 A6EF 1676 2922 526E 561F 9B9C AC40 B2F7.
 
-passenger_autobuilder must be run on a 64-bit Debian-compatible system. It builds x86 and x86-64 binaries. All dependencies besides glibc are statically linked into the produced binaries. The latest glibc symbol version that the produced binaries utilize is `GLIBC_2.11`, which should make the binaries compatible with all Linux distributions starting from 2009. This includes Ubuntu >= 10.04, Debian >= 6 and Red Hat >= 6.
+## Linux
+
+On Linux, passenger_autobuilder provides a build environment that is built with pbuilder. The build environment is based on Ubuntu 10.04 and is custom-built to be able to generate Linux binaries that can run on a wide range of Linux distributions.
+
+Because building binaries involves running build systems that may execute arbitrary code, passenger_autobuilder utilizes multiple user accounts, plus the use of sudo, to protect against build systems wrecking havoc on the system. See the "Local security" section for more information.
+
+passenger_autobuilder must be run on a 64-bit Ubuntu system. It builds x86 and x86-64 binaries. All dependencies besides glibc are statically linked into the produced binaries. The latest glibc symbol version that the produced binaries utilize is `GLIBC_2.11`, which should make the binaries compatible with all Linux distributions starting from 2009. This includes Ubuntu >= 10.04, Debian >= 6 and Red Hat >= 6.
 
 Binaries for Nginx are also generated. The Nginx version that will be compiled is the version preferred by the Phusion Passenger codebase. It includes the following modules:
 
@@ -23,13 +29,13 @@ The Nginx binary is built with prefix `/tmp` which will make it store log files,
 
 passenger_autobuilder can optionally be configured to sign the built binaries using GPG, either by running GPG locally or by forwarding the data through SSH to a remote host for signing. The latter approach provides additional security: in case the build host is compromised, the signing key is not.
 
-## Requirements
+### Requirements
 
  * A 64-bit kernel
  * `apt-get install pbuilder`
  * `apt-get install sudo`
 
-## Getting started
+### Getting started
 
 Run the following commands to install passenger_autobuilder:
 
@@ -39,7 +45,7 @@ Run the following commands to install passenger_autobuilder:
     sudo ./setup-system
     sudo ./setup-images
 
-## Building binaries
+### Building binaries
 
 To build binaries for the latest git commit, run the following as `psg_autobuilder_run`. It will call sudo automatically (because it needs to invoke pbuilder).
 
@@ -53,7 +59,7 @@ To build binaries for a tag (a release), add the `--tag=...` option, like this:
 
     ./autobuild-with-pbuilder https://github.com/FooBarWidget/passenger.git passenger --tag=release-4.0.6
 
-## Updating passenger_autobuilder itself
+### Updating passenger_autobuilder itself
 
     cd /srv/passenger_autobuilder/app
     sudo -u psg_autobuilder git pull
@@ -65,7 +71,7 @@ Sometimes the images have changed drastically, and need to be rebuilt. In that c
     sudo ./setup-system
     sudo ./setup-images
 
-## Security
+### Local security
 
 passenger_autobuilder uses multiple user accounts to ensure security. The following users exist, and their roles are as follows:
 
@@ -89,3 +95,24 @@ passenger_autobuilder uses multiple user accounts to ensure security. The follow
 The most dangerous part of the setup is probably the part where `./autobuilder-with-pbuilder` calls sudo. By ensuring that `psg_autobuilder_run` and `psg_autobuilder_chroot` only have read-only access to the passenger autobuilder source files, and by locking down the sudo policy, we prevent the system from being able to gain arbitrary root privileges.
 
 The PGP signing key can be secured by means of a signing server. See signing_configuration.example for more information.
+
+## OS X
+
+On OS X, passenger autobuilder provides a build environment for generating binaries compatible with OS X 10.7 (Lion) and beyond. Only x86_64 binaries are supported. Unlike the Linux version, the OS X version does not use multiple user accounts. OS X does not have convenient facilities to run things under multiple user accounts like other Unices do. Technically OS X can do this but its tooling is very very sucky, so we don't bother. The OS X version is designed to be run from an OS X desktop or laptop, since the availability of cheap OS X server is problematic, to say the least.
+
+## Requirements
+
+ * Xcode with the 10.7 SDK.
+ * Ruby >= 1.9.
+
+## Getting started
+
+Run the following command to create the build environment:
+
+    ./setup-libraries-osx
+
+## Building binaries
+
+Running the following command will generate binaries, sign them with auto-software-sigining@phusion.nl and upload them to oss-binaries.phusionpassenger.com.
+
+    ./autobuild-osx
