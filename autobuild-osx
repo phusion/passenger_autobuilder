@@ -7,9 +7,9 @@ export CXX="$CXX -I$OSX_LIBDIR/include -L$OSX_LIBDIR/lib"
 export PATH="$OSX_LIBDIR/bin:$PATH"
 set -x
 
-GIT_URL=https://github.com/FooBarWidget/passenger.git
-NAME=passenger
-FILE_SERVER=psg_autobuilder_chroot@juvia-helper.phusion.nl
+GIT_URL="$1"
+NAME="$2"
+FILE_SERVER="$3"
 FILE_SERVER_OUTPUT_DIR=/srv/passenger_autobuilder/output
 
 mkdir -p "$CCACHE_DIR"
