@@ -223,6 +223,7 @@ private
 
     # The .o files were only used for linking agent executables.
     sh "rm -f buildout/agents/*.o"
+    sh "rm -rf buildout/agents/*.dSYM"
     # The .o and .a files were only used for linking the Apache module.
     sh "rm -rf buildout/apache*/*.o buildout/apache*/*.a buildout/apache*/module*"
     # The directory is no longer necessary, only libboost_oxt.a matters.
@@ -235,10 +236,16 @@ private
   def recompile_nginx
     return if @options[:dry_run]
 
-    env = {
-      # Nginx's OpenSSL detection is broken w.r.t. static OpenSSL libraries.
-      'CC' => ENV['CC'] + ' -lz -ldl'
-    }
+    # Nginx's OpenSSL detection is broken w.r.t. static OpenSSL libraries.
+    if RUBY_PLATFORM =~ /darwin/
+      env = {
+        'CC' => ENV['CC'] + ' -lz'
+      }
+    else
+      env = {
+        'CC' => ENV['CC'] + ' -lz -ldl'
+      }
+    end
 
     Dir.chdir("buildout") do
       sh "tar", "xzvf", nginx_tarball
@@ -261,6 +268,8 @@ private
         static_libs_prefix = @options[:static_libs_prefix]
         inline_sed "s|-lcrypto|#{static_libs_prefix}/lib/libcrypto.a|g", "objs/Makefile"
         inline_sed "s|-lssl|#{static_libs_prefix}/lib/libssl.a|g", "objs/Makefile"
+        inline_sed "s|-lz$|#{static_libs_prefix}/lib/libz.a|g", "objs/Makefile"
+        inline_sed "s|-lz |#{static_libs_prefix}/lib/libz.a |g", "objs/Makefile"
         if RUBY_PLATFORM =~ /darwin/
           inline_sed "s|-lpcre|#{static_libs_prefix}/lib/libpcre.a|g", "objs/Makefile"
         else
