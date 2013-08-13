@@ -46,7 +46,8 @@ remote_commit_dir="$FILE_SERVER_OUTPUT_DIR/$NAME/by_commit/$GIT_COMMIT"
 	cd "$OUTPUT_DIR"
 	tar -c $all_files
 ) | ssh "$FILE_SERVER" \
-	"/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp2 &&
+	"/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp &&
+	/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp2 &&
 	cd $remote_commit_dir.tmp2 &&
 	tar xvf - &&
 	cd .. &&
