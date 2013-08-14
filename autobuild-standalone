@@ -366,6 +366,7 @@ private
     log "Testing Passenger"
     sh "mkdir", "-p", "download_cache"
     sh "cp -pR '#{output_save_subdir}'/*.tar.gz download_cache/"
+    sh "gem install daemon_controller --no-rdoc --no-ri"
     sh "rspec", "-f", "s", "-c", "test/integration_tests/downloaded_binaries_tests.rb"
   end
 
