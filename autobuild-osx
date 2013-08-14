@@ -35,22 +35,27 @@ EOF
 	--metadata-result-file "$BUILDDIR/metadata.txt"
 
 source "$BUILDDIR/metadata.txt"
+rm -f "$BUILDDIR/metadata.txt"
 all_files=""
 for F in `cat "$BUILDDIR/result.txt"`; do
+	rm -f "$F.asc"
 	gpg --armor --local-user auto-software-signing@phusion.nl --detach-sign "$F"
 	basename=`basename "$F"`
 	all_files="$all_files $basename $basename.asc"
 done
+rm -f "$BUILDDIR/result.txt"
 
-remote_commit_dir="$FILE_SERVER_OUTPUT_DIR/$NAME/by_commit/$GIT_COMMIT"
-(
-	cd "$OUTPUT_DIR"
-	tar -c $all_files
-) | ssh "$FILE_SERVER" \
-	"/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp &&
-	/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp2 &&
-	cd $remote_commit_dir.tmp2 &&
-	tar xvf - &&
-	cd .. &&
-	mv $remote_commit_dir.tmp2/* $remote_commit_dir/ &&
-	rmdir $remote_commit_dir.tmp2"
+if [[ "$FILE_SERVER" != "" ]]; then
+	remote_commit_dir="$FILE_SERVER_OUTPUT_DIR/$NAME/by_commit/$GIT_COMMIT"
+	(
+		cd "$OUTPUT_DIR"
+		tar -c $all_files
+	) | ssh "$FILE_SERVER" \
+		"/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp &&
+		/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp2 &&
+		cd $remote_commit_dir.tmp2 &&
+		tar xvf - &&
+		cd .. &&
+		mv $remote_commit_dir.tmp2/* $remote_commit_dir/ &&
+		rmdir $remote_commit_dir.tmp2"
+fi

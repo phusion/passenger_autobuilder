@@ -27,17 +27,19 @@ class Autobuild
     fetch_latest_code
     inspect_codebase
     fetch_nginx
-    if already_built?
+    if already_built?(output_commit_subdir)
       log "Already built commit #{@commit}."
     else
       recompile_passenger
       recompile_nginx
       begin
-        save_build_output
+        create_build_output
+        test_build_output
       rescue Exception
-        remove_built_output
+        remove_build_output
         raise
       end
+      commit_build_output
     end
     setup_index_symlinks
     create_release_file
@@ -208,12 +210,12 @@ private
     end
   end
 
-  def already_built?
-    File.exist?(work_tag_filename)
+  def already_built?(dir)
+    File.exist?(work_tag_filename(dir))
   end
 
-  def work_tag_filename
-    "#{output_commit_subdir}/built-#{@options[:work_tag]}.txt"
+  def work_tag_filename(dir)
+    "#{dir}/built-#{@options[:work_tag]}.txt"
   end
 
   def recompile_passenger
@@ -301,18 +303,16 @@ private
     end
   end
 
-  def save_build_output
-    build_tarballs(output_commit_subdir)
-    create_binary_compatibility_symlinks
-    sh "touch", work_tag_filename
-    create_result_file
-    create_metadata_result_file(output_commit_subdir)
+  def create_build_output
+    log "Creating build output directory #{output_save_subdir}"
+    make_output_subdir(output_save_subdir)
+    build_tarballs(output_save_subdir)
+    create_binary_compatibility_symlinks(output_save_subdir)
+    sh "touch", work_tag_filename(output_save_subdir)
   end
 
   def build_tarballs(output_dir)
     log "Saving binaries to #{output_dir}"
-    make_output_subdir(output_dir)
-
     if @options[:dry_run]
       log "--dry-run given, not creating tarballs"
     else
@@ -338,23 +338,76 @@ private
     end
   end
 
-  def create_binary_compatibility_symlinks
+  def create_binary_compatibility_symlinks(dir)
     if compatible_targets = ENV['MACOSX_COMPATIBLE_DEPLOYMENT_TARGETS']
       compatible_targets = compatible_targets.split
       results = []
 
-      @output_files.each do |filename|
-        compatible_targets.each do |target|
-          new_filename = filename.sub(binary_compat_id, "x86_64-macosx-#{target}")
-          if new_filename != filename
-            log "Creating symlink #{new_filename}"
-            File.symlink(File.basename(filename), new_filename)
-            results << new_filename
+      Dir.chdir(dir) do
+        Dir["*.tar.gz"].each do |filename|
+          compatible_targets.each do |target|
+            new_filename = filename.sub(binary_compat_id, "x86_64-macosx-#{target}")
+            if new_filename != filename
+              log "Creating symlink #{new_filename}"
+              if File.symlink?(new_filename)
+                File.unlink(new_filename)
+              end
+              # Otherwise, if file already exists but is not a symlink,
+              # let it raise an error.
+              File.symlink(filename, new_filename)
+            end
           end
         end
       end
+    end
+  end
 
-      @output_files.concat(results)
+  def test_build_output
+    log "Testing Passenger"
+  end
+
+  def commit_build_output
+    log "Committing build output to #{output_commit_subdir}"
+    make_output_subdir(output_commit_subdir)
+    filenames = move_all_files(output_save_subdir, output_commit_subdir)
+    sh "rmdir", output_save_subdir
+    create_result_file(filenames.grep(/\.tar\.gz$/))
+    create_metadata_result_file(output_commit_subdir)
+  end
+
+  def move_all_files(from, to)
+    result = []
+    puts Dir["#{from}/*"]
+    puts "-----"
+    Dir["#{from}/*"].each do |filename|
+      basename = File.basename(filename)
+      new_filename = "#{to}/#{basename}"
+      sh "mv", filename, new_filename
+      result << new_filename
+    end
+    result
+  end
+
+  def create_result_file(filenames)
+    if @options[:result_file]
+      log "Writing output filenames to #{@options[:result_file]}"
+      File.open(@options[:result_file], "w") do |f|
+        filenames.each do |filename|
+          f.puts filename
+        end
+      end
+    end
+  end
+
+  def create_metadata_result_file(output_dir)
+    if @options[:metadata_result_file]
+      log "Writing metadata to #{@options[:metadata_result_file]}"
+      File.open(@options[:metadata_result_file], "w") do |f|
+        f.puts "GIT_COMMIT=#{@commit}"
+        f.puts "GIT_SHA=#{@sha}"
+        f.puts "GIT_SUBJECT=#{@subject.inspect}"
+        f.puts "OUTPUT_DIR=#{output_dir.inspect}"
+      end
     end
   end
 
@@ -381,35 +434,9 @@ private
     ln_s output_commit_subdir, symlink_path, :verbose => true
   end
 
-  def create_result_file
-    if @options[:result_file]
-      log "Writing output filenames to #{@options[:result_file]}"
-      File.open(@options[:result_file], "w") do |f|
-        @output_files.each do |filename|
-          f.puts filename
-        end
-      end
-    end
-  end
-
-  def create_metadata_result_file(output_dir)
-    if @options[:metadata_result_file]
-      log "Writing metadata to #{@options[:metadata_result_file]}"
-      File.open(@options[:metadata_result_file], "w") do |f|
-        f.puts "GIT_COMMIT=#{@commit}"
-        f.puts "GIT_SHA=#{@sha}"
-        f.puts "GIT_SUBJECT=#{@subject.inspect}"
-        f.puts "OUTPUT_DIR=#{output_dir.inspect}"
-      end
-    end
-  end
-
   def remove_build_output
     log "An error occurred. Rolling back..."
-    @output_files.each do |filename|
-      sh "rm", "-f", filename
-    end
-    sh "rm", "-f", work_tag_filename
+    sh "rm", "-rf", output_save_subdir
   end
 
   def binary_compat_id
@@ -426,7 +453,7 @@ private
     args << { :chdir => chdir } if chdir
     sh(*args)
     sh("mv", "#{filename}.tmp", filename)
-    @output_files << filename
+    filename
   end
 
   def nginx_url
@@ -443,6 +470,10 @@ private
 
   def passenger_code_dir
     "#{@options[:repo_dir]}/main"
+  end
+
+  def output_save_subdir
+    "#{@options[:output_dir]}/by_commit/#{@commit}.tmp"
   end
 
   def output_commit_subdir
