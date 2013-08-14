@@ -129,7 +129,7 @@ if is_step 3; then
 	run_as_psg_autobuilder_chroot 'rvm install 2.0.0'
 	run_as_psg_autobuilder_chroot 'rvm --default 2.0.0'
 	run_as_psg_autobuilder_chroot 'rvm cleanup all'
-	run_as_psg_autobuilder_chroot 'gem install drake bluecloth --no-rdoc --no-ri'
+	run_as_psg_autobuilder_chroot 'gem install drake bluecloth rspec --no-rdoc --no-ri'
 fi
 
 if is_step 4; then
