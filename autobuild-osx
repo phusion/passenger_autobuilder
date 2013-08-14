@@ -29,6 +29,7 @@ EOF
 	--without-ngx_geoip_module \
 	--without-ruby-extensions \
 	--without-apache-modules \
+	--timeout 1350 \
 	--static-libs-prefix "$OSX_LIBDIR" \
 	--result-file "$BUILDDIR/result.txt" \
 	--metadata-result-file "$BUILDDIR/metadata.txt"

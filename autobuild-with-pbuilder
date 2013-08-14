@@ -53,7 +53,10 @@ function perform()
 		-- \
 		"$PASSENGER_AUTOBUILDER_APP/autobuild-bootstrap-in-pbuilder" \
 		"$name" "$platform" \
-		"--git-url=$git_url" "--result-file=$result_file" "${extra_args[@]}"
+		"--git-url=$git_url" \
+		"--result-file=$result_file" \
+		"--timeout=2700" \
+		"${extra_args[@]}"
 	if [[ -f "$result_file" ]]; then
 		local generated_files=`cat "$result_file"`
 		rm -f "$result_file"

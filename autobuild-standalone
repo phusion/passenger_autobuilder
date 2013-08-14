@@ -94,6 +94,9 @@ private
       opts.on("--static-libs-prefix PREFIX", String, "Prefix in which static libraries like libssl.a are located") do |val|
         @options[:static_libs_prefix] = val
       end
+      opts.on("--timeout TIMEOUT", Integer, "Timeout in seconds") do |val|
+        @options[:timeout] = val
+      end
       opts.on("--dry-run", "Do everything exception compiling") do
         @options[:dry_run] = true
       end
@@ -122,9 +125,18 @@ private
 
   def set_environment
     STDOUT.sync = STDERR.sync = true
+    Process.setpgrp
     set_env('USE_CCACHE', 1)
     set_env('GZIP', '--best')
     set_env('VERBOSE', 1)
+    if @options[:timeout]
+      Thread.new do
+        Thread.current.abort_on_exception = true
+        sleep(@options[:timeout])
+        STDERR.puts "*** TIMEOUT #{@options[:timeout]} SECONDS ***"
+        Process.kill('-TERM', Process.pid)
+      end
+    end
   end
 
   def set_env(key, value)
