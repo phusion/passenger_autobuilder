@@ -127,11 +127,11 @@ private
 
   def set_environment
     STDOUT.sync = STDERR.sync = true
-    Process.setpgrp
     set_env('USE_CCACHE', 1)
     set_env('GZIP', '--best')
     set_env('VERBOSE', 1)
     if @options[:timeout]
+      Process.setpgrp
       Thread.new do
         Thread.current.abort_on_exception = true
         sleep(@options[:timeout])
@@ -366,8 +366,8 @@ private
     log "Testing Passenger"
     sh "mkdir", "-p", "download_cache"
     sh "cp -pR '#{output_save_subdir}'/*.tar.gz download_cache/"
-    sh "gem install daemon_controller --no-rdoc --no-ri"
-    sh "rspec", "-f", "s", "-c", "test/integration_tests/downloaded_binaries_tests.rb"
+    sh "gem install daemon_controller rack --no-rdoc --no-ri"
+    sh "rspec -f s -c test/integration_tests/downloaded_binaries_tests.rb"
   end
 
   def commit_build_output
