@@ -295,6 +295,7 @@ private
           inline_sed "s|-lz$|/usr/lib/libz.a|g", "objs/Makefile"
           inline_sed "s|-lz |/usr/lib/libz.a |g", "objs/Makefile"
           inline_sed "s|-lpcre|/usr/lib/libpcre.a|g", "objs/Makefile"
+          inline_sed "s|-lGeoIP|/usr/lib/libGeoIP.a|g", "objs/Makefile"
         end
         
         sh "make"
