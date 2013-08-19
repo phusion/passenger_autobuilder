@@ -435,11 +435,11 @@ private
 
   # Save a file in the commit directory that tells the user what tag this came from.
   def create_release_file
-    if @options[:tag]
+    if @options[:create_release_symlink]
       filename = "#{output_commit_subdir}/RELEASE-VERSION.TXT"
       log "Creating release file #{filename}"
       File.open(filename, "w") do |f|
-        f.puts @options[:tag]
+        f.puts @passenger_version
       end
     end
   end
