@@ -8,8 +8,11 @@ export PATH="$OSX_LIBDIR/bin:$PATH"
 set -x
 
 GIT_URL="$1"
-NAME="$2"
-FILE_SERVER="$3"
+shift
+NAME="$1"
+shift
+FILE_SERVER="$1"
+shift
 FILE_SERVER_OUTPUT_DIR=/srv/passenger_autobuilder/output
 
 mkdir -p "$CCACHE_DIR"
@@ -32,7 +35,8 @@ EOF
 	--timeout 1350 \
 	--static-libs-prefix "$OSX_LIBDIR" \
 	--result-file "$BUILDDIR/result.txt" \
-	--metadata-result-file "$BUILDDIR/metadata.txt"
+	--metadata-result-file "$BUILDDIR/metadata.txt" \
+	"$@"
 
 source "$BUILDDIR/metadata.txt"
 rm -f "$BUILDDIR/metadata.txt"
@@ -51,7 +55,7 @@ if [[ "$FILE_SERVER" != "" ]]; then
 		cd "$OUTPUT_DIR"
 		tar -c $all_files
 	) | ssh "$FILE_SERVER" \
-		"/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp &&
+		"/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir &&
 		/srv/passenger_autobuilder/app/mkdir_for_chroot $remote_commit_dir.tmp2 &&
 		cd $remote_commit_dir.tmp2 &&
 		tar xvf - &&
