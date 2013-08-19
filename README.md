@@ -141,6 +141,6 @@ Run the following command to create the build environment:
 
 ## Building binaries
 
-Running the following command will generate binaries for the latest commit, sign them with auto-software-sigining@phusion.nl and upload them to a remote server.
+Running the following command will generate binaries for the latest commit, sign them with auto-software-sigining@phusion.nl and upload them to a remote server. The remote server is assumed to have passenger_autobuilder installed.
 
     ./autobuild-osx https://github.com/FooBarWidget/passenger.git passenger psg_autobuilder_chroot@yourserver.com
