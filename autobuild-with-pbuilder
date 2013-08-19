@@ -77,7 +77,7 @@ for arg in "$@"; do
 	--only-one)
 		only_one=1
 		;;
-	--tag=* | --dry-run)
+	--tag=* | --dry-run | --create-release-symlink)
 		extra_args+=("$arg")
 		;;
 	*)

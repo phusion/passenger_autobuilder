@@ -50,7 +50,6 @@ private
     @options = {
       :repo_dir => File.expand_path("repo"),
       :output_dir => File.expand_path("output"),
-      :work_tag => "today",
       :with_ngx_geoip_module => true,
       :with_ruby_extensions => true,
       :with_apache_modules => true,
@@ -68,8 +67,12 @@ private
       opts.on("--repo-dir DIR", String, "The directory in which to store the repository") do |val|
         @options[:repo_dir] = File.expand_path(val)
       end
-      opts.on("--tag NAME", String, "Checkout a specific git tag") do |val|
+      opts.on("--tag NAME", String, "Checkout a specific git tag. Implies --create-release-symlink") do |val|
         @options[:tag] = val
+        @options[:create_release_symlink] = true
+      end
+      opts.on("--create-release-symlink", "Create a release symlink after building") do
+        @options[:create_release_symlink] = true
       end
       opts.on("--output-dir DIR", String, "The directory in which to store binaries") do |val|
         @options[:output_dir] = File.expand_path(val)
@@ -189,8 +192,13 @@ private
     lines = `git show --pretty='format:%h\n%H\n%s' -s`.split("\n")
     @commit, @sha, @subject = lines
     log "Commit #{@commit}: #{@subject}"
-    File.read("lib/phusion_passenger.rb") =~ /PREFERRED_NGINX_VERSION *= *'(.+)'/
+    code = File.read("lib/phusion_passenger.rb")
+    code =~ /[\t\s]VERSION_STRING *= *'(.+)'/
+    @passenger_version = $1
+    abort "Cannot infer Phusion Passenger version" if @passenger_version.to_s.empty?
+    code =~ /PREFERRED_NGINX_VERSION *= *'(.+)'/
     @preferred_nginx_version = $1
+    abort "Cannot infer preferred Nginx version" if @preferred_nginx_version.to_s.empty?
   end
 
   def fetch_nginx
@@ -211,11 +219,15 @@ private
   end
 
   def already_built?(dir)
-    File.exist?(work_tag_filename(dir))
+    @options[:work_tag] && File.exist?(work_tag_filename(dir))
   end
 
   def work_tag_filename(dir)
-    "#{dir}/built-#{@options[:work_tag]}.txt"
+    if @options[:work_tag]
+      "#{dir}/built-#{@options[:work_tag]}.txt"
+    else
+      nil
+    end
   end
 
   def recompile_passenger
@@ -309,7 +321,9 @@ private
     make_output_subdir(output_save_subdir)
     build_tarballs(output_save_subdir)
     create_binary_compatibility_symlinks(output_save_subdir)
-    sh "touch", work_tag_filename(output_save_subdir)
+    if @options[:work_tag]
+      sh "touch", work_tag_filename(output_save_subdir)
+    end
   end
 
   def build_tarballs(output_dir)
@@ -382,8 +396,6 @@ private
 
   def move_all_files(from, to)
     result = []
-    puts Dir["#{from}/*"]
-    puts "-----"
     Dir["#{from}/*"].each do |filename|
       basename = File.basename(filename)
       new_filename = "#{to}/#{basename}"
@@ -418,7 +430,7 @@ private
 
   def setup_index_symlinks
     create_symlink_to_commit_subdir(output_date_path)
-    create_symlink_to_commit_subdir(output_tag_path) if @options[:tag]
+    create_symlink_to_commit_subdir(output_tag_path) if @options[:create_release_symlink]
   end
 
   # Save a file in the commit directory that tells the user what tag this came from.
@@ -435,8 +447,16 @@ private
   def create_symlink_to_commit_subdir(symlink_path)
     log "Creating directory symlink #{symlink_path} to commit #{@commit}"
     make_output_subdir(File.dirname(symlink_path))
-    rm_f symlink_path, :verbose => true
-    ln_s output_commit_subdir, symlink_path, :verbose => true
+    temp_symlink_path = "#{symlink_path}.tmp#{$$}"
+    begin
+      ln_s output_commit_subdir, temp_symlink_path, :verbose => true
+      puts "mv #{temp_symlink_path} #{symlink_path}"
+      File.rename(temp_symlink_path, symlink_path)
+    rescue Exception
+      puts "# An error occurred, rolling back..."
+      rm_f temp_symlink_path, :verbose => true
+      raise
+    end
   end
 
   def remove_build_output
@@ -490,7 +510,7 @@ private
   end
 
   def output_tag_path
-    "#{@options[:output_dir]}/by_release/#{@options[:tag]}"
+    "#{@options[:output_dir]}/by_release/#{@passenger_version}"
   end
 
   def inline_sed(command, filename)
