@@ -57,7 +57,7 @@ private
     }
     parser = OptionParser.new do |opts|
       nl = "\n#{' ' * 37}"
-      opts.banner = "Usage: ./autobuild OPTIONS"
+      opts.banner = "Usage: ./autobuild-standalone OPTIONS"
       opts.separator ""
       
       opts.separator "Options:"
