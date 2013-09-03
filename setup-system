@@ -54,3 +54,5 @@ if [[ ! -f app/signing_configuration ]]; then
 fi
 sudo chown psg_autobuilder_run:psg_autobuilder_run app/signing_configuration
 sudo chmod 600 app/signing_configuration
+
+sudo apt-get install -y ubuntu-dev-tools
