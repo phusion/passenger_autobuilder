@@ -32,6 +32,8 @@ umask u=rwx,g=rwx,o=rx
 sudo chown root: .
 sudo chmod g-w,o-w .
 
+sudo apt-get install -y ubuntu-dev-tools pbuilder sudo
+
 sudo mkdir -p output repos images run
 sudo mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot
 
@@ -54,5 +56,3 @@ if [[ ! -f app/signing_configuration ]]; then
 fi
 sudo chown psg_autobuilder_run:psg_autobuilder_run app/signing_configuration
 sudo chmod 600 app/signing_configuration
-
-sudo apt-get install -y ubuntu-dev-tools

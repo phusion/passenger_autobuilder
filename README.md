@@ -39,8 +39,6 @@ passenger_autobuilder can optionally be configured to sign the built binaries us
 ### Requirements
 
  * A 64-bit kernel
- * `apt-get install pbuilder`
- * `apt-get install sudo`
 
 ### Getting started
 
