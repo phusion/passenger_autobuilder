@@ -146,6 +146,8 @@ if is_step 4; then
 		strip --strip-all /usr/local/override/bin/openssl
 		strip --strip-debug /usr/local/override/lib/libcrypto.a
 		strip --strip-debug /usr/local/override/lib/libssl.a
+		sed -i 's/-lcrypto/-lcrypto -ldl/' /usr/local/override/lib/pkgconfig/openssl.pc
+		sed -i 's/-lcrypto/-lcrypto -ldl/' /usr/local/override/lib/pkgconfig/libssl.pc
 		cd ..
 		rm -rf openssl-$OPENSSL_VERSION
 	fi
@@ -159,7 +161,7 @@ if is_step 4; then
 		./configure --prefix=/usr/local/override --disable-shared --disable-manual --disable-ldap --disable-ldaps \
 			--disable-rtsp --disable-dict --disable-ftp --disable-ftps --disable-gopher --disable-imap \
 			--disable-imaps --disable-pop3 --disable-pop3s --without-librtmp --disable-smtp --disable-smtps \
-			--disable-telnet --disable-tftp --without-libmetalink --without-libidn
+			--disable-telnet --disable-tftp --without-libmetalink --without-libidn --with-ssl
 		make install-strip
 		cd ..
 		rm -rf curl-$CURL_VERSION
