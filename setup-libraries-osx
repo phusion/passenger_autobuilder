@@ -26,6 +26,17 @@ if [[ ! -e "$OSX_LIBDIR/bin/openssl" ]]; then
 	strip "$OSX_LIBDIR/bin/openssl"
 	strip -S "$OSX_LIBDIR/lib/libcrypto.a"
 	strip -S "$OSX_LIBDIR/lib/libssl.a"
+
+	mkdir -p "$OSX_LIBDIR/lib/libcrypto"
+	pushd "$OSX_LIBDIR/lib/libcrypto"
+	ar x ../libcrypto.a
+	popd
+
+	mkdir -p "$OSX_LIBDIR/lib/libssl"
+	pushd "$OSX_LIBDIR/lib/libssl"
+	ar x ../libssl.a
+	popd
+	
 	cd ..
 	rm -rf openssl-$OPENSSL_VERSION
 fi

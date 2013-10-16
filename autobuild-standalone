@@ -297,8 +297,8 @@ private
 
         # We want to link statically to OpenSSL and PCRE.
         static_libs_prefix = @options[:static_libs_prefix]
-        inline_sed "s|-lcrypto|#{static_libs_prefix}/lib/libcrypto.a|g", "objs/Makefile"
-        inline_sed "s|-lssl|#{static_libs_prefix}/lib/libssl.a|g", "objs/Makefile"
+        inline_sed "s|-lcrypto|#{static_libs_prefix}/lib/libcrypto/*.o|g", "objs/Makefile"
+        inline_sed "s|-lssl|#{static_libs_prefix}/lib/libssl/*.o|g", "objs/Makefile"
         if RUBY_PLATFORM =~ /darwin/
           inline_sed "s|-lz$|#{static_libs_prefix}/lib/libz.a|g", "objs/Makefile"
           inline_sed "s|-lz |#{static_libs_prefix}/lib/libz.a |g", "objs/Makefile"
