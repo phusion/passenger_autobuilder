@@ -12,7 +12,9 @@ shift
 NAME="$1"
 shift
 FILE_SERVER="$1"
-shift
+if [[ "$FILE_SERVER" != "" ]]; then
+	shift
+fi
 FILE_SERVER_OUTPUT_DIR=/srv/passenger_autobuilder/output
 
 mkdir -p "$CCACHE_DIR"
