@@ -58,11 +58,11 @@ To build binaries for the latest git commit, run the following as `psg_autobuild
 
 Build output will be stored in `/srv/passenger_autobuilder/output/<NAME>`. For example, you can run:
 
-    ./autobuild-with-pbuilder https://github.com/FooBarWidget/passenger.git passenger
+    ./autobuild-with-pbuilder https://github.com/phusion/passenger.git passenger
 
 To build binaries for a tag (a release), add the `--tag=...` option, like this:
 
-    ./autobuild-with-pbuilder https://github.com/FooBarWidget/passenger.git passenger --tag=release-4.0.6
+    ./autobuild-with-pbuilder https://github.com/phusion/passenger.git passenger --tag=release-4.0.6
 
 ### Updating passenger_autobuilder itself
 
@@ -141,4 +141,4 @@ Run the following command to create the build environment:
 
 Running the following command will generate binaries for the latest commit, sign them with auto-software-sigining@phusion.nl and upload them to a remote server. The remote server is assumed to have passenger_autobuilder installed.
 
-    ./autobuild-osx https://github.com/FooBarWidget/passenger.git passenger psg_autobuilder_chroot@yourserver.com
+    ./autobuild-osx https://github.com/phusion/passenger.git passenger psg_autobuilder_chroot@yourserver.com
