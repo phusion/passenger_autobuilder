@@ -20,7 +20,7 @@ if [[ ! -e "$OSX_LIBDIR/bin/openssl" ]]; then
 	rm openssl-$OPENSSL_VERSION.tar.gz
 	cd openssl-$OPENSSL_VERSION
 	./Configure darwin64-x86_64-cc --prefix="$OSX_LIBDIR" --openssldir="$OSX_LIBDIR/openssl" \
-		threads zlib no-shared no-sse2
+		threads zlib no-shared no-sse2 -fvisibility=hidden
 	make
 	make install_sw
 	strip "$OSX_LIBDIR/bin/openssl"
