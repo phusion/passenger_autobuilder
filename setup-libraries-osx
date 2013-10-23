@@ -13,6 +13,10 @@ if ! [[ -e ~/.rvm ]]; then
 	exit 1
 fi
 
+# We compile libraries with -fvisibility=hidden in order to avoid symbol clashes
+# with the library version that's installed by the system. Despite OS X using
+# two-level namespaces, symbol clashes still happen.
+
 # Compile a static OpenSSL library.
 if [[ ! -e "$OSX_LIBDIR/bin/openssl" ]]; then
 	wget http://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
@@ -74,8 +78,9 @@ fi
 if [[ ! -e "$OSX_LIBDIR/lib/libz.a" ]]; then
 	wget http://downloads.sourceforge.net/project/libpng/zlib/$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz
 	tar xzvf zlib-$ZLIB_VERSION.tar.gz
+	rm zlib-$ZLIB_VERSION.tar.gz
 	cd zlib-$ZLIB_VERSION
-	./configure --prefix="$OSX_LIBDIR" --static
+	CFLAGS='-O2 -fvisibility=hidden' ./configure --prefix="$OSX_LIBDIR" --static
 	make install
 	strip -S "$OSX_LIBDIR/lib/libz.a"
 	cd ..
