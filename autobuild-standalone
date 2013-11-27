@@ -281,6 +281,7 @@ private
     Dir.chdir("buildout") do
       sh "tar", "xzvf", nginx_tarball
       Dir.chdir(nginx_basename) do
+        rename_nginx_proctitle
         command = "./configure " <<
           "--prefix=/tmp " <<
           "--with-cc-opt='-Wno-error' " <<
@@ -313,6 +314,15 @@ private
         sh "make"
         sh "#{strip_all} objs/nginx"
       end
+    end
+  end
+
+  def rename_nginx_proctitle
+    filename = "src/os/unix/ngx_setproctitle.c"
+    if File.exist?(filename)
+      source = File.open(filename, "r") { |f| f.read }
+      source.gsub!('"nginx: "', '"PassengerWebHelper: "')
+      File.open(filename, "w") { |f| f.write(source) }
     end
   end
 
