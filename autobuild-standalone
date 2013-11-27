@@ -313,6 +313,7 @@ private
         
         sh "make"
         sh "#{strip_all} objs/nginx"
+        sh "mv objs/nginx objs/PassengerWebHelper"
       end
     end
   end
@@ -358,8 +359,8 @@ private
         end
       end
 
-      maketar "#{output_dir}/#{nginx_basename}-#{binary_compat_id}.tar.gz",
-        ["nginx"], "buildout/#{nginx_basename}/objs"
+      maketar "#{output_dir}/webhelper-#{@preferred_nginx_version}-#{binary_compat_id}.tar.gz",
+        ["PassengerWebHelper"], "buildout/#{nginx_basename}/objs"
     end
   end
 
