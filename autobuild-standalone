@@ -130,7 +130,9 @@ private
 
   def set_environment
     STDOUT.sync = STDERR.sync = true
-    set_env('USE_CCACHE', 1)
+    if !cc_uses_ccache?
+      set_env('USE_CCACHE', 1)
+    end
     set_env('GZIP', '--best')
     set_env('VERBOSE', 1)
     if @options[:timeout]
@@ -142,6 +144,10 @@ private
         Process.kill('-TERM', Process.pid)
       end
     end
+  end
+
+  def cc_uses_ccache?
+    (cc = ENV['CC']) && (cc =~ /^ccache /)
   end
 
   def set_env(key, value)
