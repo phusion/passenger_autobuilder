@@ -13,13 +13,20 @@ function create_user()
 	local name="$1"
 	local full_name="$2"
 	local id="$3"
-	if ! grep -q "^$name:" /etc/group >/dev/null; then
-		sudo addgroup --gid $id $name
-	fi
+	create_group $name $id
 	if ! grep -q "^$name:" /etc/passwd; then
 		sudo adduser --uid $id --gid $id --disabled-password --gecos "$full_name" $name
 	fi
 	sudo usermod -L $name
+}
+
+function create_group()
+{
+	local name="$1"
+	local id="$2"
+	if ! grep -q "^$name:" /etc/group >/dev/null; then
+		sudo addgroup --gid $id $name
+	fi
 }
 
 set -x
@@ -27,6 +34,14 @@ cd /srv/passenger_autobuilder
 create_user psg_autobuilder "Passenger Autobuilder" 2456
 create_user psg_autobuilder_chroot "Passenger Autobuilder Chroot" 2457
 create_user psg_autobuilder_run "Passenger Autobuilder Run" 2458
+
+create_group passenger_ci 2450
+sudo usermod -a -G passenger_ci psg_autobuilder_run
+sudo mkdir -p /var/cache/passenger_ci
+sudo touch /var/cache/passenger_ci/lock
+sudo chown -R root:passenger_ci /var/cache/passenger_ci
+sudo chmod 770 /var/cache/passenger_ci
+sudo chmod 660 /var/cache/passenger_ci/lock
 
 umask u=rwx,g=rwx,o=rx
 sudo chown root: .

@@ -23,7 +23,8 @@ def find_project(payload)
 end
 
 def schedule_build(project, tag_name = nil)
-  command = "/tools/silence-unless-failed chpst -l /tmp/passenger_autobuilder.lock " +
+  command = "/tools/silence-unless-failed -f /tmp/passenger_autobuilder.log " +
+    "chpst -l /var/cache/passenger_ci/lock " +
     "./autobuild-with-pbuilder #{project['git_url']} #{project['name']}"
   if tag_name
     command << " --tag=#{tag_name}"
