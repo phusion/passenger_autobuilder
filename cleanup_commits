@@ -1,0 +1,34 @@
+#!/usr/bin/env ruby
+require 'pathname'
+require 'set'
+require './library'
+
+include RubyLibrary
+
+if ARGV.empty?
+  abort "Usage: ./cleanup_commits <OUTPUT PROJECT DIR>"
+end
+
+dir = Pathname.new(ARGV[0])
+
+# Query all commits, dates and releases.
+commits  = Dir[dir/"by_commit/*"]
+dates    = Dir[dir/"by_date/*"].map { |d| File.basename(File.readlink(d)) }.to_set
+releases = Dir[dir/"by_release/*"].map { |d| File.basename(File.readlink(d)) }.to_set
+
+# Filter out 5 most recent commits (we never clean them).
+commits.sort! do |a, b|
+  File.stat(a).mtime <=> File.stat(b).mtime
+end
+commits = commits[0 .. commits.size - 6]
+
+# Of the remaining commits, find out which ones don't have
+# a reference from by_date or by_releases.
+unreferenced_commits = commits.find_all do |commit|
+  sha = File.basename(commit)
+  !dates.include?(sha) || !releases.include?(sha)
+end
+
+unreferenced_commits.each do |commit|
+  sh "rm", "-rf", commit
+end

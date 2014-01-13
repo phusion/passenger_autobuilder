@@ -1,3 +1,9 @@
+class Pathname
+  def /(that)
+    join that.to_s
+  end
+end
+
 module RubyLibrary
   def log(message)
     if STDOUT.tty?

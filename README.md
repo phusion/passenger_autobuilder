@@ -124,21 +124,33 @@ The Nginx version that will be compiled is the version preferred by the Phusion 
 
 The Nginx binary is built with prefix `/tmp` which will make it store log files, proxy_module buffer files, etc in `/tmp` by default. Such a prefix has the useful property of working on almost any system, but this prefix should not be used in production because of potential security issues. To solve this, you must there run the Nginx binary with the `-p` option to force it to use a different prefix (e.g. `-p /opt/local/nginx`).
 
-## Requirements
+### Requirements
 
  * All Phusion Passenger dependencies.
  * The OS X 10.7 SDK.
  * RVM installed in single-user mode.
  * Ruby 2.0.0 installed via RVM.
 
-## Getting started
+### Getting started
 
 Run the following command to create the build environment:
 
     ./setup-libraries-osx
 
-## Building binaries
+### Building binaries
 
 Running the following command will generate binaries for the latest commit, sign them with auto-software-sigining@phusion.nl and upload them to a remote server. The remote server is assumed to have passenger_autobuilder installed.
 
     ./autobuild-osx https://github.com/phusion/passenger.git passenger psg_autobuilder_chroot@yourserver.com
+
+## Maintenance
+
+Over time, there will be a lot of `by_commit` subdirectories that don't have a reference from `by_date` or `by_release`. You can clean them up with the `cleanup_commits` script.
+
+Linux (run as `psg_autobuilder_run`):
+
+    ./cleanup_commits /srv/passenger_autobuilder/output/passenger
+
+OS X:
+
+    ./cleanup_commits osx/output/passenger
