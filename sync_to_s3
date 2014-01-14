@@ -24,7 +24,7 @@ trap cleanup EXIT
 for DIR in $PASSENGER_AUTOBUILDER_OUTPUT_DIR/*; do
 	name=`basename "$DIR"`
 	status "Syncing $DIR to Amazon S3..."
-	if [[ name =~ enterprise && "$ENTERPRISE_SUFFIX" != "" ]]; then
+	if [[ "$name" =~ enterprise && "$ENTERPRISE_SUFFIX" != "" ]]; then
 		name="$name-$ENTERPRISE_SUFFIX"
 	fi
 	# s3cmd doesn't handle symlinks properly (it reuploads symlinked files even with --follow-symlinks),
