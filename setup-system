@@ -47,7 +47,7 @@ umask u=rwx,g=rwx,o=rx
 sudo chown root: .
 sudo chmod g-w,o-w .
 
-sudo apt-get install -y ubuntu-dev-tools pbuilder sudo
+sudo apt-get install -y ubuntu-dev-tools pbuilder sudo s3cmd
 
 sudo mkdir -p output repos images run
 sudo mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot

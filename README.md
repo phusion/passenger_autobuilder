@@ -40,7 +40,6 @@ passenger_autobuilder can optionally be configured to sign the built binaries us
 
  * A 64-bit kernel
  * git
- * s3cmd
 
 ### Getting started
 
