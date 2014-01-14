@@ -24,6 +24,9 @@ trap cleanup EXIT
 for DIR in $PASSENGER_AUTOBUILDER_OUTPUT_DIR/*; do
 	name=`basename "$DIR"`
 	status "Syncing $DIR to Amazon S3..."
+	# s3cmd doesn't handle symlinks properly (it reuploads symlinked files even with --follow-symlinks),
+	# so we have to use --skip-existing.
 	chpst -l $PASSENGER_AUTOBUILDER_RUN_DIR/sync_to_s3.lock \
-		s3cmd sync --follow-symlinks --delete-removed --acl-public $DIR/by_release/ $S3_TARGET/$name/by_release/
+		s3cmd sync --follow-symlinks --skip-existing --delete-removed --acl-public \
+		$DIR/by_release/ $S3_TARGET/$name/by_release/
 done
