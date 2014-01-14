@@ -11,5 +11,19 @@ if [[ "$S3_TARGET" = "" ]]; then
 	exit
 fi
 
-exec chpst -l $PASSENGER_AUTOBUILDER_RUN_DIR/sync_to_s3.lock \
-	s3cmd sync --delete-removed $PASSENGER_AUTOBUILDER_OUTPUT_DIR/ $S3_TARGET
+function cleanup()
+{
+	local pids=`jobs -p`
+	if [[ "$pids" != "" ]]; then
+		kill $pids
+	fi
+}
+
+trap cleanup EXIT
+
+for DIR in $PASSENGER_AUTOBUILDER_OUTPUT_DIR/*; do
+	name=`basename "$DIR"`
+	status "Syncing $DIR to Amazon S3..."
+	chpst -l $PASSENGER_AUTOBUILDER_RUN_DIR/sync_to_s3.lock \
+		s3cmd sync --delete-removed $DIR/by_release/ $S3_TARGET/$name/by_release/
+done
