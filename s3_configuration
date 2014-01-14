@@ -1,3 +1,6 @@
 ## This is the file that governs syncing of output files to Amazon S3.
 
 S3_TARGET="s3://phusion-passenger/binaries"
+
+## Set a suffix for Passenger Enterprise. Will be appended to the Enterprise folder name.
+# ENTERPRISE_SUFFIX=
