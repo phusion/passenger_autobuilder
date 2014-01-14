@@ -62,6 +62,10 @@ sudo chmod 755 app
 sudo chmod u=rwx,g=rwxs,o=x output
 sudo chmod 770 run
 
+sudo touch run/sync_to_s3.lock
+sudo chown psg_autobuilder_run:psg_autobuilder_chroot run/sync_to_s3.lock
+sudo chmod u=rwx,g=rwx,o= run/sync_to_s3.lock
+
 sudo cp app/sudoers.conf /etc/sudoers.d/passenger_autobuilder
 sudo chmod 440 /etc/sudoers.d/passenger_autobuilder
 
