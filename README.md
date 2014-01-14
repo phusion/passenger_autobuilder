@@ -39,6 +39,8 @@ passenger_autobuilder can optionally be configured to sign the built binaries us
 ### Requirements
 
  * A 64-bit kernel
+ * git
+ * s3cmd
 
 ### Getting started
 
@@ -49,6 +51,8 @@ Run the following commands to install passenger_autobuilder:
     cd /srv/passenger_autobuilder/app
     sudo ./setup-system
     sudo ./setup-images
+    sudo -u psg_autobuilder_run -H s3cmd --configure
+    sudo -u psg_autobuilder_chroot -H s3cmd --configure
 
 ### Building binaries
 
@@ -130,6 +134,7 @@ The Nginx binary is built with prefix `/tmp` which will make it store log files,
  * The OS X 10.7 SDK.
  * RVM installed in single-user mode.
  * Ruby 2.0.0 installed via RVM.
+ * git
 
 ### Getting started
 

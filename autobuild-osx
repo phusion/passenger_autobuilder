@@ -63,5 +63,6 @@ if [[ "$FILE_SERVER" != "" ]]; then
 		tar xvf - &&
 		cd .. &&
 		mv $remote_commit_dir.tmp2/* $remote_commit_dir/ &&
-		rmdir $remote_commit_dir.tmp2"
+		rmdir $remote_commit_dir.tmp2 &&
+		/srv/passenger_autobuilder/app/sync_to_s3"
 fi

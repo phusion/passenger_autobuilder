@@ -1,0 +1,15 @@
+#!/bin/bash
+set -e
+
+PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
+PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
+source "$PASSENGER_AUTOBUILDER_APP/library"
+source "$PASSENGER_AUTOBUILDER_APP/s3_configuration"
+
+if [[ "$S3_TARGET" = "" ]]; then
+	echo "S3_TARGET not set in s3_configuration. Not syncing to Amazon S3."
+	exit
+fi
+
+exec chpst -l $PASSENGER_AUTOBUILDER_RUN_DIR/sync_to_s3.lock \
+	s3cmd sync --delete-removed $PASSENGER_AUTOBUILDER_OUTPUT_DIR/ $S3_TARGET

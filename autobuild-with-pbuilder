@@ -95,4 +95,8 @@ fi
 perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-amd64.tgz" amd64 linux-x86_64
 if [[ "$only_one" != "" ]]; then exit; fi
 perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-i386.tgz" i386 linux-x86
+
+status "Syncing to S3"
+"$PASSENGER_AUTOBUILDER_APP/sync_to_s3"
+
 success "All done!"
