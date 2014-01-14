@@ -92,13 +92,15 @@ passenger_autobuilder uses multiple user accounts to ensure security. The follow
     * Read-write access to the output directory in which built binaries are stored, so that it can sign files.
     * Passwordless sudo access to run a specific form of the `pbuilder` command, in order to start the build process. For details, see sudoers.conf. The reason why this is necessary is because pbuilder calls chroot(), which is only possible with root privileges.
     * Read-write access to a directory in which it stores a summary of the build results.
+    * Synching output files to Amazon S3.
 
- * `psg_autobuilder_chroot` is the user that runs inside the pbuilder chroot jail to build binaries. This user has the following rights:
+ * `psg_autobuilder_chroot` is the user that runs inside the pbuilder chroot jail to build binaries. The OS X build script also uploads binaries to the server as this user. This user has the following rights:
 
     * Read-only access to the passenger autobuilder source files.
     * Read-write access to the output directory in which built binaries are stored.
     * Read-write access to the ccache directory.
     * Read-write access to a directory in which it stores a summary of the build results.
+    * Synching output files to Amazon S3.
 
 The most dangerous part of the setup is probably the part where `./autobuilder-with-pbuilder` calls sudo. By ensuring that `psg_autobuilder_run` and `psg_autobuilder_chroot` only have read-only access to the passenger autobuilder source files, and by locking down the sudo policy, we prevent the system from being able to gain arbitrary root privileges.
 
