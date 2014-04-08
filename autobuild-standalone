@@ -6,6 +6,7 @@ require 'optparse'
 require 'logger'
 require 'fileutils'
 require 'date'
+require 'shellwords'
 require_relative './library'
 
 ROOT = File.expand_path(File.dirname(__FILE__))
@@ -439,10 +440,10 @@ private
     if @options[:metadata_result_file]
       log "Writing metadata to #{@options[:metadata_result_file]}"
       File.open(@options[:metadata_result_file], "w") do |f|
-        f.puts "GIT_COMMIT=#{@commit}"
-        f.puts "GIT_SHA=#{@sha}"
-        f.puts "GIT_SUBJECT=#{@subject.inspect}"
-        f.puts "OUTPUT_DIR=#{output_dir.inspect}"
+        f.puts "GIT_COMMIT=#{Shellwords.escape @commit}"
+        f.puts "GIT_SHA=#{Shellwords.escape @sha}"
+        f.puts "GIT_SUBJECT=#{Shellwords.escape @subject}"
+        f.puts "OUTPUT_DIR=#{Shellwords.escape output_dir}"
       end
     end
   end
