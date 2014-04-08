@@ -53,15 +53,15 @@ function install_apache()
 		if [[ "$download_apr" = --download-apr ]]; then
 			pushd srclib
 
-			wget http://mirror.nl.webzilla.com/apache//apr/apr-1.4.8.tar.bz2
-			tar xjvf apr-1.4.8.tar.bz2
-			rm apr-1.4.8.tar.bz2
-			mv apr-1.4.8 apr
+			wget http://mirror.nl.webzilla.com/apache//apr/apr-1.5.0.tar.bz2
+			tar xjvf apr-1.5.0.tar.bz2
+			rm apr-1.5.0.tar.bz2
+			mv apr-1.5.0 apr
 			
-			wget http://mirror.nl.webzilla.com/apache//apr/apr-util-1.5.2.tar.bz2
-			tar xjvf apr-util-1.5.2.tar.bz2
-			rm apr-util-1.5.2.tar.bz2
-			mv apr-util-1.5.2 apr-util
+			wget http://mirror.nl.webzilla.com/apache//apr/apr-util-1.5.3.tar.bz2
+			tar xjvf apr-util-1.5.3.tar.bz2
+			rm apr-util-1.5.3.tar.bz2
+			mv apr-util-1.5.3 apr-util
 
 			popd
 		fi
