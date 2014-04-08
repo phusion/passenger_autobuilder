@@ -1,4 +1,4 @@
-CURL_VERSION=7.36.0
+CURL_VERSION=7.31.0
 OPENSSL_VERSION=1.0.1g
 
 COMPILER_FLAGS="-I/usr/local/override/include -L/usr/local/override/lib"
