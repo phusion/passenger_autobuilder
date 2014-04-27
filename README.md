@@ -160,3 +160,8 @@ Linux (run as `psg_autobuilder_run`):
 OS X:
 
     ./cleanup_commits osx/output/passenger
+
+## Related projects
+
+ * https://github.com/phusion/passenger_apt_automation
+ * https://github.com/phusion/passenger_rpm_automation
