@@ -1,23 +1,46 @@
 #!/bin/bash
 set -e
 
-dir=`dirname "$0"`
-cd "$dir"
-if "`pwd`" != /srv/passenger_autobuilder/app; then
-	echo "passenger_autobuilder MUST be located in /srv/passenger_autobuilder/app."
+
+##### Basic initialization #####
+
+if [[ `id -u` != 0 ]]; then
+	echo "You MUST run this script as root."
 	exit 1
 fi
+
+if [[ -e /etc/vagrant_box_build_time ]]; then
+	in_vagrant=true
+else
+	in_vagrant=false
+	dir=`dirname "$0"`
+	cd "$dir"
+	if "`pwd`" != /srv/passenger_autobuilder/app; then
+		echo "passenger_autobuilder MUST be located in /srv/passenger_autobuilder/app."
+		exit 1
+	fi
+fi
+
+
+##### Functions #####
+
+function run()
+{
+	echo "# $@"
+	"$@"
+}
 
 function create_user()
 {
 	local name="$1"
 	local full_name="$2"
 	local id="$3"
+	echo "Creating group: $name"
 	create_group $name $id
 	if ! grep -q "^$name:" /etc/passwd; then
-		sudo adduser --uid $id --gid $id --disabled-password --gecos "$full_name" $name
+		run adduser --uid $id --gid $id --disabled-password --gecos "$full_name" $name
 	fi
-	sudo usermod -L $name
+	run usermod -L $name
 }
 
 function create_group()
@@ -25,53 +48,104 @@ function create_group()
 	local name="$1"
 	local id="$2"
 	if ! grep -q "^$name:" /etc/group >/dev/null; then
-		sudo addgroup --gid $id $name
+		run addgroup --gid $id $name
 	fi
 }
 
-set -x
+
+##### Main script #####
+
+echo " --> Entering /srv/passenger_autobuilder"
 cd /srv/passenger_autobuilder
+umask u=rwx,g=rwx,o=rx
+
+echo " --> Creating users, directories and files"
 create_user psg_autobuilder "Passenger Autobuilder" 2456
 create_user psg_autobuilder_chroot "Passenger Autobuilder Chroot" 2457
 create_user psg_autobuilder_run "Passenger Autobuilder Run" 2458
-
 create_group passenger_ci 2450
-sudo usermod -a -G passenger_ci psg_autobuilder_run
-sudo mkdir -p /var/cache/passenger_ci
-sudo touch /var/cache/passenger_ci/lock
-sudo chown -R root:passenger_ci /var/cache/passenger_ci
-sudo chmod 770 /var/cache/passenger_ci
-sudo chmod 660 /var/cache/passenger_ci/lock
 
-umask u=rwx,g=rwx,o=rx
-sudo chown root: .
-sudo chmod g-w,o-w .
+run chown root: /srv/passenger_autobuilder
+run chmod g-w,o-w /srv/passenger_autobuilder
 
-sudo apt-get install -y ubuntu-dev-tools pbuilder sudo s3cmd
+run usermod -a -G passenger_ci psg_autobuilder_run
+run mkdir -p /var/cache/passenger_ci
+run touch /var/cache/passenger_ci/lock
+run chown -R root:passenger_ci /var/cache/passenger_ci
+run chmod 770 /var/cache/passenger_ci
+run chmod 660 /var/cache/passenger_ci/lock
 
-sudo mkdir -p output repos images run
-sudo mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot
+run mkdir -p output repos images run config
+run mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot
+run chown -R psg_autobuilder_chroot:psg_autobuilder_chroot repos ccache/psg_autobuilder_chroot
+run chown -R psg_autobuilder_chroot:psg_autobuilder_run output
+run chown -R psg_autobuilder_run:psg_autobuilder_chroot run
+run chown psg_autobuilder_run:psg_autobuilder_run config
+run chmod o-rx ccache/pbuilder ccache/psg_autobuilder_chroot repos
+run chmod u=rwx,g=rwxs,o=x output
+run chmod 770 run
+run chmod 700 config
 
-sudo chown -R psg_autobuilder:psg_autobuilder app
-sudo chown -R psg_autobuilder_chroot:psg_autobuilder_chroot repos ccache/psg_autobuilder_chroot
-sudo chown -R psg_autobuilder_chroot:psg_autobuilder_run output
-sudo chown -R psg_autobuilder_run:psg_autobuilder_chroot run
+run touch run/sync_to_s3.lock
+run chown psg_autobuilder_run:psg_autobuilder_chroot run/sync_to_s3.lock
+run chmod u=rw,g=rw,o= run/sync_to_s3.lock
 
-sudo chmod o-rx ccache/pbuilder ccache/psg_autobuilder_chroot repos
-sudo chmod 755 app
-sudo chmod u=rwx,g=rwxs,o=x output
-sudo chmod 770 run
-
-sudo touch run/sync_to_s3.lock
-sudo chown psg_autobuilder_run:psg_autobuilder_chroot run/sync_to_s3.lock
-sudo chmod u=rw,g=rw,o= run/sync_to_s3.lock
-
-sudo cp app/sudoers.conf /etc/sudoers.d/passenger_autobuilder
-sudo chmod 440 /etc/sudoers.d/passenger_autobuilder
-
-if [[ ! -f app/signing_configuration ]]; then
-	sudo cp app/signing_configuration.example app/signing_configuration
-	sudo nano app/signing_configuration
+if ! $is_vagrant; then
+	run chown -R psg_autobuilder:psg_autobuilder app
+	run chmod 755 app
 fi
-sudo chown psg_autobuilder_run:psg_autobuilder_run app/signing_configuration
-sudo chmod 600 app/signing_configuration
+
+echo " --> Adding third-party APT repositories"
+echo "Installing Jenkins public key"
+wget -q -O - http://pkg.jenkins-ci.org/debian/jenkins-ci.org.key | apt-key add -
+echo "Adding Jenkins APT repository"
+echo deb http://pkg.jenkins-ci.org/debian binary/ | sudo tee /etc/apt/sources.list.d/jenkins.list
+
+echo " --> Installing dependencies"
+run apt-get update
+run apt-get install -y ubuntu-dev-tools pbuilder runit sudo s3cmd gnupg jenkins
+
+echo " --> Configuring system"
+run usermod -a -G passenger_ci jenkins
+run cp app/sudoers.conf /etc/sudoers.d/passenger_autobuilder
+run chown root: /etc/sudoers.d/passenger_autobuilder
+run chmod 440 /etc/sudoers.d/passenger_autobuilder
+
+if ! $in_vagrant; then
+	if [[ ! -e config/signing ]] && tty -s; then
+		run cp app/config.example/signing config/signing
+		run nano config/signing
+	fi
+	if [[ ! -e config/s3 ]] && tty -s; then
+		run cp app/config.example/s3 config/s3
+		run nano config/s3
+	fi
+else
+	if ! sudo -H -u psg_autobuilder_run gpg --list-keys | grep -q Vagrant; then
+		run sudo -H -u psg_autobuilder_run gpg --import /vagrant/dev/vagrant-gpg-key.asc
+	fi
+	run sudo -H -u psg_autobuilder_run gpg --import-ownertrust <<EOF
+# List of assigned trustvalues, created Mon 29 Sep 2014 10:13:25 AM UTC
+# (Use "gpg --import-ownertrust" to restore them)
+8A926F06B0051E4DD9EE9C8B92315E32E0939C0A:6:
+EOF
+	if [[ ! -e config/signing ]] && tty -s; then
+		run cp app/config.example/signing.vagrant config/signing
+	fi
+fi
+
+run chown psg_autobuilder_run:psg_autobuilder_run config/signing
+run chmod 600 config/signing
+run chown psg_autobuilder_run:psg_autobuilder_run config/s3
+run chmod 600 config/s3
+
+echo "--------------"
+echo "Setup finished."
+echo
+
+if [[ ! -e images/lucid-amd64.tgz ]]; then
+	echo "**** WARNING: you haven't setup any images yet. Please set them up by running:"
+	echo
+	echo "  sudo /srv/passenger_autobuilder/app/setup-images"
+	echo
+fi

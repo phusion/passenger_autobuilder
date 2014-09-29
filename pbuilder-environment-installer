@@ -53,15 +53,15 @@ function install_apache()
 		if [[ "$download_apr" = --download-apr ]]; then
 			pushd srclib
 
-			wget http://mirror.nl.webzilla.com/apache//apr/apr-1.5.0.tar.bz2
-			tar xjvf apr-1.5.0.tar.bz2
-			rm apr-1.5.0.tar.bz2
-			mv apr-1.5.0 apr
+			wget http://archive.apache.org/dist/apr/apr-1.5.1.tar.bz2
+			tar xjvf apr-1.5.1.tar.bz2
+			rm apr-1.5.1.tar.bz2
+			mv apr-1.5.1 apr
 			
-			wget http://mirror.nl.webzilla.com/apache//apr/apr-util-1.5.3.tar.bz2
-			tar xjvf apr-util-1.5.3.tar.bz2
-			rm apr-util-1.5.3.tar.bz2
-			mv apr-util-1.5.3 apr-util
+			wget http://archive.apache.org/dist/apr/apr-util-1.5.4.tar.bz2
+			tar xjvf apr-util-1.5.4.tar.bz2
+			rm apr-util-1.5.4.tar.bz2
+			mv apr-util-1.5.4 apr-util
 
 			popd
 		fi
@@ -130,7 +130,8 @@ if is_step 3; then
 	run_as_psg_autobuilder_chroot 'rvm install 2.1.3'
 	run_as_psg_autobuilder_chroot 'rvm --default 2.1.3'
 	run_as_psg_autobuilder_chroot 'rvm cleanup all'
-	run_as_psg_autobuilder_chroot 'gem install drake bluecloth rspec --no-rdoc --no-ri'
+	run_as_psg_autobuilder_chroot 'gem install drake bluecloth --no-rdoc --no-ri'
+	run_as_psg_autobuilder_chroot 'gem install rspec -v 2.14.1 --no-rdoc --no-ri'
 fi
 
 if is_step 4; then

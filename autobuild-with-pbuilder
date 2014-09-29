@@ -1,10 +1,19 @@
 #!/bin/bash
 set -e
 
-PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
-PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
-source "$PASSENGER_AUTOBUILDER_APP/library"
-source "$PASSENGER_AUTOBUILDER_APP/signing_configuration"
+SELFDIR=`dirname "$0"`
+SELFDIR=`cd "$SELFDIR"; pwd`
+source "$SELFDIR/library"
+source "$PASSENGER_AUTOBUILDER_CONFIG_DIR/signing"
+
+function cleanup()
+{
+	local pids=`jobs -p`
+	if [[ "$pids" != "" ]]; then
+		set +e
+		kill $pids
+	fi
+}
 
 function usage()
 {
@@ -23,7 +32,7 @@ function sign()
 			signature=`$SIGNING_SSH_COMMAND < "$F"`
 			echo "$signature" > "$F.asc"
 		else
-			echo "Invalid signing method $SIGNING_METHOD. Please check your signing_configuration."
+			echo "Invalid signing method $SIGNING_METHOD. Please check $PASSENGER_AUTOBUILDER_CONFIG_DIR/signing."
 			exit 1
 		fi
 	done
@@ -45,13 +54,20 @@ function perform()
 		maybe_linux32=
 	fi
 
+	local bindmounts
+	if [[ -e /etc/vagrant_box_build_time ]]; then
+		bindmounts="$PASSENGER_AUTOBUILDER_ROOT $PASSENGER_AUTOBUILDER_APP_DIR"
+	else
+		bindmounts="$PASSENGER_AUTOBUILDER_ROOT"
+	fi
+
 	status "Performing build: $platform"
 	local result_file="$PASSENGER_AUTOBUILDER_RUN_DIR/result-$$.txt"
 	$maybe_linux32 sudo /usr/sbin/pbuilder execute \
 		--basetgz "$base_tgz" \
-		--bindmounts "$PASSENGER_AUTOBUILDER_ROOT" \
+		--bindmounts "$bindmounts" \
 		-- \
-		"$PASSENGER_AUTOBUILDER_APP/autobuild-bootstrap-in-pbuilder" \
+		"$PASSENGER_AUTOBUILDER_APP_DIR/autobuild-bootstrap-in-pbuilder" \
 		"$name" "$platform" \
 		"--git-url=$git_url" \
 		"--result-file=$result_file" \
@@ -64,6 +80,8 @@ function perform()
 		sign $generated_files
 	fi
 }
+
+trap cleanup EXIT
 
 git_url="$1"
 name="$2"
@@ -92,11 +110,13 @@ if [[ "$git_url" = "" || "$name" = "" ]]; then
 	exit 1
 fi
 
-perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-amd64.tgz" amd64 linux-x86_64
+perform "$PASSENGER_AUTOBUILDER_IMAGES_DIR/lucid-amd64.tgz" amd64 linux-x86_64
 if [[ "$only_one" != "" ]]; then exit; fi
-perform "$PASSENGER_AUTOBUILDER_ROOT/images/lucid-i386.tgz" i386 linux-x86
+perform "$PASSENGER_AUTOBUILDER_IMAGES_DIR/lucid-i386.tgz" i386 linux-x86
 
-status "Syncing to S3"
-"$PASSENGER_AUTOBUILDER_APP/sync_to_s3"
+if [[ -e "$PASSENGER_AUTOBUILDER_CONFIG_DIR/s3" ]]; then
+	status "Syncing to S3"
+	"$PASSENGER_AUTOBUILDER_APP_DIR/sync_to_s3"
+fi
 
 success "All done!"

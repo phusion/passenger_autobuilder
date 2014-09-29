@@ -36,14 +36,23 @@ The Nginx binary is built with prefix `/tmp` which will make it store log files,
 
 passenger_autobuilder can optionally be configured to sign the built binaries using GPG, either by running GPG locally or by forwarding the data through SSH to a remote host for signing. The latter approach provides additional security: in case the build host is compromised, the signing key is not.
 
-### Requirements
+### Setting up a development environment
+
+We provide a Vagrantfile so that you can easily set up a development VM for developing passenger_autobuilder.
+
+ 1. Install Vagrant and VirtualBox.
+ 2. Run: `vagrant up`
+ 3. Run: `vagrant ssh`
+ 4. Inside the SSH session, run: `sudo /vagrant/setup-images`
+
+### Setting up the production environment
+
+You need:
 
  * A 64-bit kernel
  * git
 
-### Getting started
-
-Run the following commands to install passenger_autobuilder:
+Run the following commands on your production server to install passenger_autobuilder:
 
     sudo mkdir /srv/passenger_autobuilder
     sudo git clone https://github.com/phusion/passenger_autobuilder.git /srv/passenger_autobuilder/app
@@ -55,7 +64,7 @@ Run the following commands to install passenger_autobuilder:
 
 ### Building binaries
 
-To build binaries for the latest git commit, run the following as `psg_autobuilder_run`. It will call sudo automatically (because it needs to invoke pbuilder).
+To build binaries for the latest git commit, run the following **as `psg_autobuilder_run`**. It will call sudo automatically (because it needs to invoke pbuilder).
 
     ./autobuild-with-pbuilder <GIT_URL> <NAME>
 
@@ -69,15 +78,27 @@ To build binaries for a tag (a release), add the `--tag=...` option, like this:
 
 ### Updating passenger_autobuilder itself
 
+Run the following inside the development VM or the production server:
+
     cd /srv/passenger_autobuilder/app
     sudo -u psg_autobuilder git pull
     sudo ./setup-system
 
 Sometimes the images have changed drastically, and need to be rebuilt. In that case, also run:
 
-    sudo rm -rf ../images
+    sudo rm -rf /srv/passenger_autobuilder/images
     sudo ./setup-system
     sudo ./setup-images
+
+### Jenkins integration
+
+`setup-system` automatically sets up a sudo configuration file that allows Jenkins to run `autobuild-with-pbuilder` as `psg_autobuild_run`. Create a Jenkins project that executes the following:
+
+    sudo -u psg_autobuilder_run -H /srv/passenger_autobuilder/app/autobuild-with-pbuilder <GIT_URL> <NAME>
+
+For example:
+
+    sudo -u psg_autobuilder_run -H /srv/passenger_autobuilder/app/autobuild-with-pbuilder https://github.com/phusion/passenger.git passenger
 
 ### Local security
 
@@ -104,7 +125,7 @@ passenger_autobuilder uses multiple user accounts to ensure security. The follow
 
 The most dangerous part of the setup is probably the part where `./autobuilder-with-pbuilder` calls sudo. By ensuring that `psg_autobuilder_run` and `psg_autobuilder_chroot` only have read-only access to the passenger autobuilder source files, and by locking down the sudo policy, we prevent the system from being able to gain arbitrary root privileges.
 
-The PGP signing key can be secured by means of a signing server. See signing_configuration.example for more information.
+The PGP signing key can be secured by means of a signing server. See config.example/signing for more information.
 
 ## OS X
 
@@ -132,9 +153,9 @@ The Nginx binary is built with prefix `/tmp` which will make it store log files,
 ### Requirements
 
  * All Phusion Passenger dependencies.
- * The OS X 10.7 SDK.
+ * The OS X 10.8 SDK.
  * RVM installed in single-user mode.
- * Ruby 2.0.0 installed via RVM.
+ * Ruby 2.1.3 installed via RVM.
  * git
 
 ### Getting started
@@ -159,7 +180,7 @@ Linux (run as `psg_autobuilder_run`):
 
 OS X:
 
-    ./cleanup_commits osx/output/passenger
+    ./cleanup_commits osx_buildout/output/passenger
 
 ## Related projects
 

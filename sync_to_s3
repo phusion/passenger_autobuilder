@@ -1,13 +1,13 @@
 #!/bin/bash
 set -e
 
-PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
-PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
-source "$PASSENGER_AUTOBUILDER_APP/library"
-source "$PASSENGER_AUTOBUILDER_APP/s3_configuration"
+SELFDIR=`dirname "$0"`
+SELFDIR=`cd "$SELFDIR"; pwd`
+source "$SELFDIR/library"
+source "$PASSENGER_AUTOBUILDER_CONFIG_DIR/s3"
 
 if [[ "$S3_TARGET" = "" ]]; then
-	echo "S3_TARGET not set in s3_configuration. Not syncing to Amazon S3."
+	echo "S3_TARGET not set in $PASSENGER_AUTOBUILDER_CONFIG_DIR/s3. Not syncing to Amazon S3."
 	exit
 fi
 

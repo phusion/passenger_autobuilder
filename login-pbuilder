@@ -1,7 +1,7 @@
 #!/bin/bash
-PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
-PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
-source "$PASSENGER_AUTOBUILDER_APP/library"
+SELFDIR=`dirname "$0"`
+SELFDIR=`cd "$SELFDIR"; pwd`
+source "$SELFDIR/library"
 
 base_tgz="$1"
 shift

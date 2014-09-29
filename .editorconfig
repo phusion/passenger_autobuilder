@@ -1,0 +1,19 @@
+# http://EditorConfig.org
+
+root = true
+end_of_line = lf
+charset = utf-8
+
+[setup-system]
+indent_style=tab
+
+[setup-images]
+indent_style=tab
+
+[Vagrantfile]
+indent_style=space
+ident_size=2
+
+[autobuild-standalone]
+indent_style=space
+ident_size=2

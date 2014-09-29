@@ -7,7 +7,7 @@ shift
 shift
 
 source /srv/passenger_autobuilder/app/pbuilder-environment
-export CCACHE_DIR="/srv/passenger_autobuilder/ccache/psg_autobuilder_chroot/$platform"
+export CCACHE_DIR="/srv/passenger_autobuilder/ccache/psg_autobuilder_chroot/$platform/$name"
 export GIT_SSH="/srv/passenger_autobuilder/app/git-ssh"
 
 umask u=rwx,g=rwx,o=rx
@@ -24,7 +24,7 @@ A09CD539B8BB8CBE96E82BDFABD4D3B3F5806B4D:6:
 B0F4253373F8F6F510D42178520A9993A1C052F8:6:
 EOF
 
-exec ~/.rvm/bin/rvm-exec ruby-2.0.0 ruby /srv/passenger_autobuilder/app/autobuild-standalone \
+exec ~/.rvm/bin/rvm-exec ruby-2.1.3 ruby /srv/passenger_autobuilder/app/autobuild-standalone \
 	--repo-dir "$repo_dir" \
 	--output-dir "/srv/passenger_autobuilder/output/$name" \
 	"$@"

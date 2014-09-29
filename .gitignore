@@ -1,1 +1,3 @@
-signing_configuration
+/.vagrant
+config.example
+osx_buildout

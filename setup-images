@@ -1,9 +1,14 @@
 #!/bin/bash
 set -e
 
-PASSENGER_AUTOBUILDER_APP=`dirname "$0"`
-PASSENGER_AUTOBUILDER_APP=`cd "$PASSENGER_AUTOBUILDER_APP"; pwd`
-source "$PASSENGER_AUTOBUILDER_APP/library"
+if [[ `id -u` != 0 ]]; then
+	echo "You MUST run this script as root."
+	exit 1
+fi
+
+SELFDIR=`dirname "$0"`
+SELFDIR=`cd "$SELFDIR"; pwd`
+source "$SELFDIR/library"
 
 FINAL_STATE=6
 
@@ -116,6 +121,6 @@ for arg in "$@"; do
 	esac
 done
 
-create_base_tgz ../images/lucid-amd64.tgz lucid amd64 ubuntu-10.04-x86_64
+create_base_tgz "$PASSENGER_AUTOBUILDER_IMAGES_DIR/lucid-amd64.tgz" lucid amd64 ubuntu-10.04-x86_64
 if [[ $only_one = 1 ]]; then exit; fi
-create_base_tgz ../images/lucid-i386.tgz lucid i386 ubuntu-10.04-x86
+create_base_tgz "$PASSENGER_AUTOBUILDER_IMAGES_DIR/lucid-i386.tgz" lucid i386 ubuntu-10.04-x86
