@@ -16,7 +16,7 @@ passenger_autobuilder generates binaries for:
 
  * The Phusion Passenger support files (e.g. the agent executables).
  * Apache modules built against multiple versions of Apache: 2.0, 2.2, 2.4
- * Phusion Passenger Ruby extensions built against multiple versions of Ruby: 1.8.7, 1.9.2, 1.9.3, 2.0.0
+ * Phusion Passenger Ruby extensions built against multiple versions of Ruby: 1.8.7, 1.9.2, 1.9.3, 2.0.0, 2.1.3.
  * Nginx.
 
 The Nginx version that will be compiled is the version preferred by the Phusion Passenger codebase. It includes the following modules:
