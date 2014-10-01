@@ -84,7 +84,7 @@ run chown psg_autobuilder_run:psg_autobuilder_run config
 run chmod o-rx ccache/pbuilder ccache/psg_autobuilder_chroot repos
 run chmod u=rwx,g=rwxs,o=x output
 run chmod 770 run
-run chmod 700 config
+run chmod u=rwx,g=x,o= config
 
 run touch run/sync_to_s3.lock
 run chown psg_autobuilder_run:psg_autobuilder_chroot run/sync_to_s3.lock
@@ -136,8 +136,8 @@ fi
 
 run chown psg_autobuilder_run:psg_autobuilder_run config/signing
 run chmod 600 config/signing
-run chown psg_autobuilder_run:psg_autobuilder_run config/s3
-run chmod 600 config/s3
+run chown psg_autobuilder_run:psg_autobuilder_chroot config/s3
+run chmod 640 config/s3
 
 echo "--------------"
 echo "Setup finished."
