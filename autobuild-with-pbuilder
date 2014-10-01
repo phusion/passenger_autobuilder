@@ -110,6 +110,8 @@ if [[ "$git_url" = "" || "$name" = "" ]]; then
 	exit 1
 fi
 
+umask u=rwx,g=rx,o=rx
+
 perform "$PASSENGER_AUTOBUILDER_IMAGES_DIR/lucid-amd64.tgz" amd64 linux-x86_64
 if [[ "$only_one" != "" ]]; then exit; fi
 perform "$PASSENGER_AUTOBUILDER_IMAGES_DIR/lucid-i386.tgz" i386 linux-x86
