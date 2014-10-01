@@ -80,7 +80,7 @@ run mkdir -p ccache ccache/pbuilder ccache/psg_autobuilder_chroot
 run chown -R psg_autobuilder_chroot:psg_autobuilder_chroot repos ccache/psg_autobuilder_chroot
 run chown -R psg_autobuilder_chroot:psg_autobuilder_run output
 run chown -R psg_autobuilder_run:psg_autobuilder_chroot run
-run chown psg_autobuilder_run:psg_autobuilder_run config
+run chown psg_autobuilder_run:psg_autobuilder_chroot config
 run chmod o-rx ccache/pbuilder ccache/psg_autobuilder_chroot repos
 run chmod u=rwx,g=rwxs,o=x output
 run chmod 770 run
