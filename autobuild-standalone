@@ -264,6 +264,8 @@ private
     # The .o files were only used for linking agent executables.
     sh "rm -f buildout/agents/*.o"
     sh "rm -rf buildout/agents/*.dSYM"
+    sh "rm -f buildout/support-binaries/*.o"
+    sh "rm -rf buildout/support-binaries/*.dSYM"
     # The .o and .a files were only used for linking the Apache module.
     sh "rm -rf buildout/apache*/*.o buildout/apache*/*.a buildout/apache*/module*"
     # The directory is no longer necessary, only libboost_oxt.a matters.
@@ -360,8 +362,13 @@ private
         end
       end
 
+      if File.exist?("buildout/agents")
+        support_binaries_dir = "agents"
+      else
+        support_binaries_dir = "support-binaries"
+      end
       maketar "#{output_dir}/support-#{binary_compat_id}.tar.gz",
-        ["agents", "common"], "buildout"
+        [support_binaries_dir, "common"], "buildout"
 
       if @options[:with_apache_modules]
         APACHE_VERSIONS.each do |version|
