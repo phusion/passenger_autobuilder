@@ -1,3 +1,5 @@
 #!/bin/bash
-set -ex
-exec sudo -H -u psg_autobuilder_chroot /srv/passenger_autobuilder/app/autobuild-bootstrap-after-sudo "$@"
+set -e
+PASSENGER_AUTOBUILDER_APP_DIR="$1"
+set -x
+exec sudo -H -u psg_autobuilder_chroot "$PASSENGER_AUTOBUILDER_APP_DIR/autobuild-bootstrap-after-sudo" "$@"

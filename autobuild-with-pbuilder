@@ -68,6 +68,7 @@ function perform()
 		--bindmounts "$bindmounts" \
 		-- \
 		"$PASSENGER_AUTOBUILDER_APP_DIR/autobuild-bootstrap-in-pbuilder" \
+		"$PASSENGER_AUTOBUILDER_APP_DIR" \
 		"$name" "$platform" \
 		"--git-url=$git_url" \
 		"--result-file=$result_file" \
