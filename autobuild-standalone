@@ -292,7 +292,6 @@ private
     Dir.chdir("buildout") do
       sh "tar", "xzvf", nginx_tarball
       Dir.chdir(nginx_basename) do
-        rename_nginx_proctitle
         command = "./configure " <<
           "--prefix=/tmp " <<
           "--with-cc-opt='-Wno-error' " <<
@@ -326,17 +325,8 @@ private
         
         sh "make"
         sh "#{strip_all} objs/nginx"
-        sh "mv objs/nginx objs/PassengerWebHelper"
+        sh "mv objs/nginx objs/nginx-#{@preferred_nginx_version}"
       end
-    end
-  end
-
-  def rename_nginx_proctitle
-    filename = "src/os/unix/ngx_setproctitle.c"
-    if File.exist?(filename)
-      source = File.open(filename, "r") { |f| f.read }
-      source.gsub!('"nginx: "', '"PassengerWebHelper: "')
-      File.open(filename, "w") { |f| f.write(source) }
     end
   end
 
@@ -362,13 +352,8 @@ private
         end
       end
 
-      if File.exist?("buildout/agents")
-        support_binaries_dir = "agents"
-      else
-        support_binaries_dir = "support-binaries"
-      end
-      maketar "#{output_dir}/support-#{binary_compat_id}.tar.gz",
-        [support_binaries_dir, "common"], "buildout"
+      maketar "#{output_dir}/agent-#{binary_compat_id}.tar.gz",
+        ["PassengerAgent"], "buildout/support-binaries"
 
       if @options[:with_apache_modules]
         APACHE_VERSIONS.each do |version|
@@ -377,8 +362,8 @@ private
         end
       end
 
-      maketar "#{output_dir}/webhelper-#{@preferred_nginx_version}-#{binary_compat_id}.tar.gz",
-        ["PassengerWebHelper"], "buildout/#{nginx_basename}/objs"
+      maketar "#{output_dir}/nginx-#{@preferred_nginx_version}-#{binary_compat_id}.tar.gz",
+        ["nginx-#{@preferred_nginx_version}"], "buildout/#{nginx_basename}/objs"
     end
   end
 
