@@ -249,7 +249,7 @@ private
       sh "~/.rvm/bin/rvm-exec ruby-2.1.3 env NOEXEC_DISABLE=1 rake native_support"
     end
 
-    sh "~/.rvm/bin/rvm-exec #{DEFAULT_RUBY_VERSION} #{drake} nginx"
+    sh "~/.rvm/bin/rvm-exec #{DEFAULT_RUBY_VERSION} #{drake} nginx OPTIMIZE=true"
 
     if @options[:with_apache_modules]
       APACHE_VERSIONS.each do |version|
