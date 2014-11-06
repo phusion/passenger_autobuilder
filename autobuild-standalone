@@ -70,8 +70,11 @@ private
         @options[:repo_dir] = File.expand_path(val)
       end
       opts.on("--tag NAME", String, "Checkout a specific git tag. Implies --create-release-symlink") do |val|
-        @options[:tag] = val
+        @options[:commit] = val
         @options[:create_release_symlink] = true
+      end
+      opts.on("--branch NAME", String, "Checkout a specific branch") do |val|
+        @options[:commit] = val
       end
       opts.on("--create-release-symlink", "Create a release symlink after building") do
         @options[:create_release_symlink] = true
@@ -184,8 +187,8 @@ private
   end
 
   def reset_to_requested_commit
-    if @options[:tag]
-      sh "git reset --hard '#{@options[:tag]}'"
+    if @options[:commit]
+      sh "git reset --hard '#{@options[:commit]}'"
     else
       sh "git reset --hard origin/master"
     end
