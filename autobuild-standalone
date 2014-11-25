@@ -399,7 +399,7 @@ private
     sh "mkdir", "-p", "download_cache"
     sh "cp -pR '#{output_save_subdir}'/*.tar.gz download_cache/"
     sh "ls -l download_cache/"
-    sh "gem install daemon_controller rack --no-rdoc --no-ri"
+    sh_retry "gem install daemon_controller rack --no-rdoc --no-ri"
     sh "rspec -f s -c --tty test/integration_tests/downloaded_binaries_tests.rb"
   end
 

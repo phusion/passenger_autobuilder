@@ -20,6 +20,16 @@ module RubyLibrary
     end
   end
 
+  def sh_retry(command)
+    3.times do
+      log "# #{command}"
+      if system(command, *args)
+        return
+      end
+    end
+    abort "*** Command failed with code #{$? ? $?.exitstatus : 'unknown'}"
+  end
+
   # Create a directory tree with the right permissions. Every directory
   # must be sticky and group-writable, so that the psg_autobuilder_run
   # user can create signatures.
