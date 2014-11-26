@@ -20,9 +20,9 @@ module RubyLibrary
     end
   end
 
-  def sh_retry(command)
+  def sh_retry(command, *args)
     3.times do
-      log "# #{command}"
+      log "#{command} #{args.join(' ')}"
       if system(command, *args)
         return
       end
