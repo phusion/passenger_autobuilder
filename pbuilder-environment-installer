@@ -57,7 +57,7 @@ function install_apache()
 			tar xjvf apr-1.5.1.tar.bz2
 			rm apr-1.5.1.tar.bz2
 			mv apr-1.5.1 apr
-			
+
 			wget http://archive.apache.org/dist/apr/apr-util-1.5.4.tar.bz2
 			tar xjvf apr-util-1.5.4.tar.bz2
 			rm apr-util-1.5.4.tar.bz2
@@ -113,7 +113,7 @@ if is_step 2; then
 	# Install RVM, Ruby 1.8 and Ruby 1.9.2.
 	usermod -a -G sudo psg_autobuilder_chroot
 	if ! [[ -e /usr/local/rvm ]]; then
-		sudo -H gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
+		sudo -u psg_autobuilder_chroot -H gpg --keyserver hkp://keys.gnupg.net --recv-keys 409B6B1796C275462A1703113804BB82D39DC0E3
 		curl -L https://get.rvm.io | sudo -u psg_autobuilder_chroot -H -E bash -s stable
 	fi
 	(
@@ -138,6 +138,19 @@ if is_step 3; then
 fi
 
 if is_step 4; then
+	# Install a newer version of pkg-config without bugs.
+	if [[ ! -e /usr/local/override/bin/pkg-config ]]; then
+		sudo apt-get install libglib2.0-dev
+		wget http://pkgconfig.freedesktop.org/releases/pkg-config-$PKG_CONFIG_VERSION.tar.gz
+		tar xzf pkg-config-$PKG_CONFIG_VERSION.tar.gz
+		rm pkg-config-$PKG_CONFIG_VERSION.tar.gz
+		cd pkg-config-$PKG_CONFIG_VERSION
+		./configure --prefix=/usr/local/override
+		make install-strip
+		cd ..
+		rm -rf pkg-config-$PKG_CONFIG_VERSION
+	fi
+
 	# Compile a static OpenSSL library.
 	if [[ ! -e /usr/local/override/bin/openssl ]]; then
 		wget http://www.openssl.org/source/openssl-$OPENSSL_VERSION.tar.gz
@@ -151,8 +164,10 @@ if is_step 4; then
 		strip --strip-all /usr/local/override/bin/openssl
 		strip --strip-debug /usr/local/override/lib/libcrypto.a
 		strip --strip-debug /usr/local/override/lib/libssl.a
-		sed -i 's/-lcrypto/-lcrypto -ldl/' /usr/local/override/lib/pkgconfig/openssl.pc
-		sed -i 's/-lcrypto/-lcrypto -ldl/' /usr/local/override/lib/pkgconfig/libssl.pc
+		sed -i 's/^Libs:.*/Libs: -L${libdir} -lssl -lcrypto -ldl/' /usr/local/override/lib/pkgconfig/openssl.pc
+		sed -i 's/^Libs.private:.*/Libs.private: -L${libdir} -lssl -lcrypto -ldl -lz/' /usr/local/override/lib/pkgconfig/openssl.pc
+		sed -i 's/^Libs:.*/Libs: -L${libdir} -lssl -lcrypto -ldl/' /usr/local/override/lib/pkgconfig/libssl.pc
+		sed -i 's/^Libs.private:.*/Libs.private: -L${libdir} -lssl -lcrypto -ldl -lz/' /usr/local/override/lib/pkgconfig/libssl.pc
 		cd ..
 		rm -rf openssl-$OPENSSL_VERSION
 	fi
