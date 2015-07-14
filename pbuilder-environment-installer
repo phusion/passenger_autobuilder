@@ -160,10 +160,13 @@ if is_step 4; then
 		tar xjvf curl-$CURL_VERSION.tar.bz2
 		rm curl-$CURL_VERSION.tar.bz2
 		cd curl-$CURL_VERSION
-		./configure --prefix=/usr/local/override --disable-shared --disable-manual --disable-ldap --disable-ldaps \
+		./configure --prefix=/usr/local/override --disable-shared --disable-debug --enable-optimize --disable-werror \
+			--disable-curldebug --enable-symbol-hiding --disable-ares --disable-manual --disable-ldap --disable-ldaps \
 			--disable-rtsp --disable-dict --disable-ftp --disable-ftps --disable-gopher --disable-imap \
 			--disable-imaps --disable-pop3 --disable-pop3s --without-librtmp --disable-smtp --disable-smtps \
-			--disable-telnet --disable-tftp --without-libmetalink --without-libidn --with-ssl
+			--disable-telnet --disable-tftp --disable-smb --disable-versioned-symbols \
+			--without-libmetalink --without-libidn --without-libssh2 --without-libmetalink --without-nghttp2 \
+			--with-ssl
 		make install-strip
 		cd ..
 		rm -rf curl-$CURL_VERSION
