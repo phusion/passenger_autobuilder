@@ -203,7 +203,11 @@ private
     lines = `git show --pretty='format:%h\n%H\n%s' -s`.split("\n")
     @commit, @sha, @subject = lines
     log "Commit #{@commit}: #{@subject}"
-    code = File.read("lib/phusion_passenger.rb")
+    if File.exist?("lib/phusion_passenger.rb")
+      code = File.read("lib/phusion_passenger.rb")
+    else
+      code = File.read("src/ruby_supportlib/phusion_passenger.rb")
+    end
     code =~ /[\t\s]VERSION_STRING *= *'(.+)'/
     @passenger_version = $1
     abort "Cannot infer Phusion Passenger version" if @passenger_version.to_s.empty?
