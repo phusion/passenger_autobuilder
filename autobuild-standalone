@@ -192,6 +192,7 @@ private
     else
       sh "git reset --hard origin/master"
     end
+    sh "git subomdule update --init --recursive"
   end
 
   def cd_repo_dir
