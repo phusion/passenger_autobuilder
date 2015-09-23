@@ -214,6 +214,9 @@ private
     code =~ /PREFERRED_NGINX_VERSION *= *'(.+)'/
     @preferred_nginx_version = $1
     abort "Cannot infer preferred Nginx version" if @preferred_nginx_version.to_s.empty?
+
+    @nginx_addon_dir = `bin/passenger-config about nginx-addon-dir`.strip
+    abort "Cannot infer Nginx addon directory" if @nginx_addon_dir.empty?
   end
 
   def fetch_nginx
@@ -310,7 +313,7 @@ private
         if @options[:with_ngx_geoip_module]
           command << "--with-http_geoip_module "
         end
-        command << "--add-module=#{passenger_code_dir}/ext/nginx"
+        command << "--add-module=#{@nginx_addon_dir}"
         sh env, command
 
         # We want to link statically to OpenSSL, PCRE and zlib.
