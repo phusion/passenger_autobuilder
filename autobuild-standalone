@@ -170,6 +170,7 @@ private
     else
       git_clone
     end
+    sh "git", "submodule", "update", "--init", "--recursive"
   end
 
   def git_fetch_and_reset
