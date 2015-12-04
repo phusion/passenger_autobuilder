@@ -55,8 +55,8 @@ You need:
 Run the following commands on your production server to install passenger_autobuilder:
 
     sudo mkdir /srv/passenger_autobuilder
-    sudo git clone https://github.com/phusion/passenger_autobuilder.git /srv/passenger_autobuilder/app
-    cd /srv/passenger_autobuilder/app
+    sudo git clone https://github.com/phusion/passenger_autobuilder.git /srv/passenger_autobuilder/appv5
+    cd /srv/passenger_autobuilder/appv5
     sudo ./setup-system
     sudo ./setup-images
     sudo -u psg_autobuilder_run -H s3cmd --configure
@@ -80,7 +80,7 @@ To build binaries for a tag (a release), add the `--tag=...` option, like this:
 
 Run the following inside the development VM or the production server:
 
-    cd /srv/passenger_autobuilder/app
+    cd /srv/passenger_autobuilder/appv5
     sudo -u psg_autobuilder git pull
     sudo ./setup-system
 
@@ -94,11 +94,11 @@ Sometimes the images have changed drastically, and need to be rebuilt. In that c
 
 `setup-system` automatically sets up a sudo configuration file that allows Jenkins to run `autobuild-with-pbuilder` as `psg_autobuild_run`. Create a Jenkins project that executes the following:
 
-    sudo -u psg_autobuilder_run -H /srv/passenger_autobuilder/app/autobuild-with-pbuilder <GIT_URL> <NAME>
+    sudo -u psg_autobuilder_run -H /srv/passenger_autobuilder/appv5/autobuild-with-pbuilder <GIT_URL> <NAME>
 
 For example:
 
-    sudo -u psg_autobuilder_run -H /srv/passenger_autobuilder/app/autobuild-with-pbuilder https://github.com/phusion/passenger.git passenger
+    sudo -u psg_autobuilder_run -H /srv/passenger_autobuilder/appv5/autobuild-with-pbuilder https://github.com/phusion/passenger.git passenger
 
 ### Local security
 

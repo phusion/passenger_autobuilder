@@ -10,7 +10,7 @@ Vagrant.configure(VAGRANTFILE_API_VERSION) do |config|
   config.ssh.forward_agent = true
 
   config.vm.synced_folder ".", "/vagrant", :disabled => true
-  config.vm.synced_folder ".", "/srv/passenger_autobuilder/app", :type => "nfs"
+  config.vm.synced_folder ".", "/srv/passenger_autobuilder/appv5", :type => "nfs"
 
   config.vm.provider :vmware_fusion do |f, override|
     override.vm.box_url = "https://oss-binaries.phusionpassenger.com/vagrant/boxes/latest/ubuntu-12.04-amd64-vmwarefusion.box"

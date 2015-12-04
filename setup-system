@@ -15,8 +15,8 @@ else
 	in_vagrant=false
 	dir=`dirname "$0"`
 	cd "$dir"
-	if "`pwd`" != /srv/passenger_autobuilder/app; then
-		echo "passenger_autobuilder MUST be located in /srv/passenger_autobuilder/app."
+	if "`pwd`" != /srv/passenger_autobuilder/appv5; then
+		echo "passenger_autobuilder MUST be located in /srv/passenger_autobuilder/appv5."
 		exit 1
 	fi
 fi
@@ -107,37 +107,39 @@ run apt-get install -y ubuntu-dev-tools pbuilder runit sudo s3cmd gnupg jenkins
 
 echo " --> Configuring system"
 run usermod -a -G passenger_ci jenkins
-run cp app/sudoers.conf /etc/sudoers.d/passenger_autobuilder
+run cp appv5/sudoers.conf /etc/sudoers.d/passenger_autobuilder
 run chown root: /etc/sudoers.d/passenger_autobuilder
 run chmod 440 /etc/sudoers.d/passenger_autobuilder
 
 if ! $in_vagrant; then
 	if [[ ! -e config/signing ]] && tty -s; then
-		run cp app/config.example/signing config/signing
+		run cp appv5/config.example/signing config/signing
 		run nano config/signing
 	fi
 	if [[ ! -e config/s3 ]] && tty -s; then
-		run cp app/config.example/s3 config/s3
+		run cp appv5/config.example/s3 config/s3
 		run nano config/s3
 	fi
 else
 	if ! sudo -H -u psg_autobuilder_run gpg --list-keys | grep -q Vagrant; then
-		run sudo -H -u psg_autobuilder_run gpg --import /vagrant/dev/vagrant-gpg-key.asc
+		run sudo -H -u psg_autobuilder_run gpg --import /srv/passenger_autobuilder/appv5/dev/vagrant-gpg-key.asc
 	fi
 	run sudo -H -u psg_autobuilder_run gpg --import-ownertrust <<EOF
 # List of assigned trustvalues, created Mon 29 Sep 2014 10:13:25 AM UTC
 # (Use "gpg --import-ownertrust" to restore them)
 8A926F06B0051E4DD9EE9C8B92315E32E0939C0A:6:
 EOF
-	if [[ ! -e config/signing ]] && tty -s; then
-		run cp app/config.example/signing.vagrant config/signing
+	if [[ ! -e config/signing ]]; then
+		run cp appv5/config.example/signing.vagrant config/signing
 	fi
 fi
 
 run chown psg_autobuilder_run:psg_autobuilder_run config/signing
 run chmod 600 config/signing
-run chown psg_autobuilder_run:psg_autobuilder_chroot config/s3
-run chmod 640 config/s3
+if [[ -e config/s3 ]]; then
+	run chown psg_autobuilder_run:psg_autobuilder_chroot config/s3
+	run chmod 640 config/s3
+fi
 
 echo "--------------"
 echo "Setup finished."
@@ -146,6 +148,6 @@ echo
 if [[ ! -e images/lucid-amd64.tgz ]]; then
 	echo "**** WARNING: you haven't setup any images yet. Please set them up by running:"
 	echo
-	echo "  sudo /srv/passenger_autobuilder/app/setup-images"
+	echo "  sudo /srv/passenger_autobuilder/appv5/setup-images"
 	echo
 fi
