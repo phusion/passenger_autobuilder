@@ -26,7 +26,7 @@ A09CD539B8BB8CBE96E82BDFABD4D3B3F5806B4D:6:
 B0F4253373F8F6F510D42178520A9993A1C052F8:6:
 EOF
 
-exec ~/.rvm/bin/rvm-exec ruby-2.1.3 ruby $PASSENGER_AUTOBUILDER_APP_DIR/autobuild-standalone \
+exec ~/.rvm/bin/rvm-exec ruby-2.2.3 ruby $PASSENGER_AUTOBUILDER_APP_DIR/autobuild-standalone \
 	--repo-dir "$repo_dir" \
 	--output-dir "/srv/passenger_autobuilder/output/$name" \
 	"$@"

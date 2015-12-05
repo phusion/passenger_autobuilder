@@ -12,7 +12,7 @@ require_relative './library'
 ROOT = File.expand_path(File.dirname(__FILE__))
 
 class Autobuild
-  DEFAULT_RUBY_VERSION = '2.1.3'
+  DEFAULT_RUBY_VERSION = '2.2.3'
   APACHE_VERSIONS = ['2.0', '2.2', '2.4']
 
   include FileUtils
@@ -258,7 +258,8 @@ private
       sh "~/.rvm/bin/rvm-exec ruby-1.9.2 env NOEXEC_DISABLE=1 rake native_support"
       sh "~/.rvm/bin/rvm-exec ruby-1.9.3 env NOEXEC_DISABLE=1 rake native_support"
       sh "~/.rvm/bin/rvm-exec ruby-2.0.0 env NOEXEC_DISABLE=1 rake native_support"
-      sh "~/.rvm/bin/rvm-exec ruby-2.1.3 env NOEXEC_DISABLE=1 rake native_support"
+      sh "~/.rvm/bin/rvm-exec ruby-2.1.7 env NOEXEC_DISABLE=1 rake native_support"
+      sh "~/.rvm/bin/rvm-exec ruby-2.2.3 env NOEXEC_DISABLE=1 rake native_support"
     end
 
     sh "~/.rvm/bin/rvm-exec #{DEFAULT_RUBY_VERSION} #{drake} nginx OPTIMIZE=true"

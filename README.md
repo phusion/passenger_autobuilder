@@ -155,7 +155,7 @@ The Nginx binary is built with prefix `/tmp` which will make it store log files,
  * All Phusion Passenger dependencies.
  * The OS X 10.8 SDK.
  * RVM installed in single-user mode.
- * Ruby 2.1.3 installed via RVM.
+ * Ruby 2.2.3 installed via RVM.
  * git
 
 ### Getting started
