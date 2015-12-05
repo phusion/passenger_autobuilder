@@ -410,7 +410,11 @@ private
     sh "cp -pR '#{output_save_subdir}'/*.tar.gz download_cache/"
     sh "ls -l download_cache/"
     sh_retry "gem install rack --no-rdoc --no-ri"
-    sh "bundle exec rspec -f s -c --tty test/integration_tests/downloaded_binaries_tests.rb"
+    if RUBY_PLATFORM =~ /linux/
+      sh "rspec -f s -c --tty test/integration_tests/downloaded_binaries_tests.rb"
+    else
+      sh "bundle exec rspec -f s -c --tty test/integration_tests/downloaded_binaries_tests.rb"
+    end
   end
 
   def commit_build_output
