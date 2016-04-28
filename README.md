@@ -22,7 +22,7 @@ passenger_autobuilder generates binaries for:
 The Nginx version that will be compiled is the version preferred by the Phusion Passenger codebase. It includes the following modules:
 
  * `http_ssl_module`
- * `http_spdy_module`
+ * `http_v2_module`
  * `http_gzip_static_module`
  * `http_proxy_module`
  * `http_fastcgi_module`
@@ -139,7 +139,7 @@ passenger_autobuilder generates binaries for:
 The Nginx version that will be compiled is the version preferred by the Phusion Passenger codebase. It includes the following modules:
 
  * `http_ssl_module`
- * `http_spdy_module`
+ * `http_v2_module`
  * `http_gzip_static_module`
  * `http_proxy_module`
  * `http_fastcgi_module`
