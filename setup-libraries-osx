@@ -66,7 +66,7 @@ fi
 
 # Compile a minimalist PCRE with almost no dependencies.
 if [[ ! -e "$OSX_LIBDIR/bin/pcre-config" ]]; then
-	wget http://downloads.sourceforge.net/project/pcre/pcre/$PCRE_VERSION/pcre-$PCRE_VERSION.tar.gz
+	wget http://vorboss.dl.sourceforge.net/project/pcre/pcre/$PCRE_VERSION/pcre-$PCRE_VERSION.tar.gz
 	tar xjf pcre-$PCRE_VERSION.tar.gz
 	rm pcre-$PCRE_VERSION.tar.gz
 	cd pcre-$PCRE_VERSION
@@ -79,7 +79,7 @@ fi
 
 # Compile a static zlib library.
 if [[ ! -e "$OSX_LIBDIR/lib/libz.a" ]]; then
-	wget http://downloads.sourceforge.net/project/libpng/zlib/$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz
+	wget http://vorboss.dl.sourceforge.net/project/libpng/zlib/$ZLIB_VERSION/zlib-$ZLIB_VERSION.tar.gz
 	tar xzf zlib-$ZLIB_VERSION.tar.gz
 	rm zlib-$ZLIB_VERSION.tar.gz
 	cd zlib-$ZLIB_VERSION
