@@ -25,7 +25,7 @@ commits = commits[0 .. commits.size - 6]
 # a reference from by_releases.
 unreferenced_commits = commits.find_all do |commit|
   sha = File.basename(commit)
-  !!releases.include?(sha)
+  !releases.include?(sha)
 end
 
 unreferenced_commits.each do |commit|
