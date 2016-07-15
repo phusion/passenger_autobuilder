@@ -11,9 +11,8 @@ end
 
 dir = Pathname.new(ARGV[0])
 
-# Query all commits, dates and releases.
+# Query all commits, releases.
 commits  = Dir[dir/"by_commit/*"]
-dates    = Dir[dir/"by_date/*"].map { |d| File.basename(File.readlink(d)) }.to_set
 releases = Dir[dir/"by_release/*"].map { |d| File.basename(File.readlink(d)) }.to_set
 
 # Filter out 5 most recent commits (we never clean them).
@@ -23,12 +22,19 @@ end
 commits = commits[0 .. commits.size - 6]
 
 # Of the remaining commits, find out which ones don't have
-# a reference from by_date or by_releases.
+# a reference from by_releases.
 unreferenced_commits = commits.find_all do |commit|
   sha = File.basename(commit)
-  !dates.include?(sha) && !releases.include?(sha)
+  !!releases.include?(sha)
 end
 
 unreferenced_commits.each do |commit|
   sh "rm", "-rf", commit
+end
+
+# Now cleaning dangling by_date symlinks.
+Dir[dir/"by_date/*"].each do |path|
+  if !File.exist?(path)
+    sh "rm", path
+  end
 end
