@@ -1,5 +1,7 @@
 # Passenger Binary Builder Automation System
 
+**This project is now obsolete. It has been superseded by https://github.com/phusion/passenger_binary_build_automation**
+
 This repository contains scripts for automating the building of Linux and OS X binaries for [Phusion Passenger](https://www.phusionpassenger.com/). The goal is for us (Phusion) to setup an automated build infrastructure so that every Phusion Passenger release comes with binaries that work for most users. These binaries are built immediately after we push a tag a Github, to minimize the release delay between source code and binaries. Once this infrastructure is in place, most users should never have to compile by themselves again, saving precious time and resources. If you are security minded, then you may want to run this infrastructure on your internal network instead of using our binaries.
 
 The built binaries are signed with GPG and are stored on https://oss-binaries.phusionpassenger.com/. The key used for signing is "auto-software-signing@phusion.nl", key ID 561F9B9CAC40B2F7, fingerprint 1637 8A33 A6EF 1676 2922 526E 561F 9B9C AC40 B2F7.
